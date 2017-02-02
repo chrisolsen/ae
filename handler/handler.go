@@ -186,6 +186,9 @@ func (b *Base) PathParam(tpl string) string {
 	path := b.Req.URL.Path
 	startIndex := strings.Index(tpl, ":")
 	endIndex := strings.Index(path[startIndex:], "/")
+	if startIndex == -1 {
+		return ""
+	}
 	if endIndex == -1 {
 		endIndex = len(path)
 	}
