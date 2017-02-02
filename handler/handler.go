@@ -195,6 +195,25 @@ func (b *Base) PathParam(tpl string) string {
 	return path[startIndex : startIndex+endIndex]
 }
 
+// PathParamByIndex extracts the path param by index. Negative indexes are allowed.
+func (b *Base) PathParamByIndex(index int) string {
+	parts := strings.Split(b.Req.URL.Path, "/")
+	count := len(parts)
+
+	if index < 0 && (index+1)*-1 > count {
+		return ""
+	}
+	if index > count {
+		return ""
+	}
+
+	if index < 0 {
+		return parts[count+index]
+	}
+
+	return parts[index]
+}
+
 // PathKey returns the decodded *datastore.Key value from the url
 func (b *Base) PathKey(tpl string) *datastore.Key {
 	rawKey := b.PathParam(tpl)
