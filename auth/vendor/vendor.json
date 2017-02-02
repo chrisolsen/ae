@@ -1,0 +1,19 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "vE43s37+4CJ2CDU6TlOUOYE0K9c=",
+			"path": "golang.org/x/crypto/bcrypt",
+			"revision": "dc137beb6cce2043eb6b5f223ab8bf51c32459f4",
+			"revisionTime": "2017-01-30T16:50:24Z"
+		},
+		{
+			"checksumSHA1": "JsJdKXhz87gWenMwBeejTOeNE7k=",
+			"path": "golang.org/x/crypto/blowfish",
+			"revision": "dc137beb6cce2043eb6b5f223ab8bf51c32459f4",
+			"revisionTime": "2017-01-30T16:50:24Z"
+		}
+	],
+	"rootPath": "github.com/chrisolsen/ae/auth"
+}
