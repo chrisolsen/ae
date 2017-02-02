@@ -192,7 +192,7 @@ func (b *Base) PathParam(tpl string) string {
 	if endIndex == -1 {
 		endIndex = len(path)
 	}
-	return path[startIndex:endIndex]
+	return path[startIndex : startIndex+endIndex]
 }
 
 // PathKey returns the decodded *datastore.Key value from the url
