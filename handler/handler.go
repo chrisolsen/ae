@@ -166,26 +166,19 @@ func (b *Base) Abort(statusCode int, err error) {
 
 // QueryParam obtains the value matching the passed in name within the request
 // url's querystring
-func (b *Base) QueryParam(name string) (string, bool) {
-	val := b.Req.URL.Query().Get(name)
-	return val, len(val) > 0
+func (b *Base) QueryParam(name string) string {
+	return b.Req.URL.Query().Get(name)
 }
 
 // QueryKey returns the decoded *datastore.Key value from the query params
-func (b *Base) QueryKey(name string) (*datastore.Key, bool) {
-	raw, ok := b.QueryParam(name)
-	if !ok {
-		b.Abort(http.StatusBadRequest, fmt.Errorf("missing %s querystring value", name))
-		return nil, false
+func (b *Base) QueryKey(name string) *datastore.Key {
+	raw := b.QueryParam(name)
+	if len(raw) == 0 {
+		return nil
 	}
 
-	key, err := datastore.DecodeKey(raw)
-	if err != nil {
-		b.Abort(http.StatusBadRequest, fmt.Errorf("decode %s key: %v", name, err))
-		return nil, false
-	}
-
-	return key, true
+	key, _ := datastore.DecodeKey(raw)
+	return key
 }
 
 // PathParam returns the decodded *datastore.Key value from the url
