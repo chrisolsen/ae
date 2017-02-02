@@ -181,7 +181,7 @@ func (b *Base) QueryKey(name string) *datastore.Key {
 	return key
 }
 
-// PathParam returns the decodded *datastore.Key value from the url
+// PathParam returns the decoded *datastore.Key value from the url
 func (b *Base) PathParam(tpl string) string {
 	path := b.Req.URL.Path
 	startIndex := strings.Index(tpl, ":")
