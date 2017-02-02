@@ -158,8 +158,10 @@ func (b *Base) Abort(statusCode int, err error) {
 	// log method to appengine log
 	log.Errorf(c, hErr.Error())
 
-	b.Res.WriteHeader(statusCode)
-	json.NewEncoder(b.Res).Encode(hErr)
+	if strings.Index(b.Req.Header.Get("Accept"), "application/json") > 0 {
+		b.Res.WriteHeader(statusCode)
+		json.NewEncoder(b.Res).Encode(hErr)
+	}
 }
 
 // QueryParam obtains the value matching the passed in name within the request
