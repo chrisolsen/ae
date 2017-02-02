@@ -222,9 +222,16 @@ func (b *Base) PathKey(tpl string) *datastore.Key {
 	}
 	key, err := datastore.DecodeKey(rawKey)
 	if err != nil {
-		b.Abort(http.StatusBadRequest, fmt.Errorf("decode key: %s/:key - %v", tpl, err))
 		return nil
 	}
-
 	return key
+}
+
+// Redirect is a simple wrapper around the core http method
+func (b *Base) Redirect(url string, perm bool) {
+	status := http.StatusTemporaryRedirect
+	if perm {
+		status = http.StatusMovedPermanently
+	}
+	http.Redirect(b.Res, b.Req, url, status)
 }
