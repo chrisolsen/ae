@@ -16,6 +16,15 @@ type Token struct {
 	Expiry time.Time `json:"expiry" datastore:",noindex"`
 }
 
+func (t *Token) isExpired() bool {
+	return t.Expiry.Before(time.Now())
+}
+
+func (t *Token) willExpireIn(duration time.Duration) bool {
+	future := time.Now().Add(duration)
+	return t.Expiry.Before(future)
+}
+
 // Load .
 func (t *Token) Load(ps []datastore.Property) error {
 	if err := datastore.LoadStruct(t, ps); err != nil {
