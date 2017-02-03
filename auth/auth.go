@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
-
-	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
 
 	"github.com/chrisolsen/fbgraphapi"
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
+	"google.golang.org/appengine/datastore"
 )
 
 // GetToken returns the *Token value for the raw token value contained within the auth cookie or auth header
@@ -32,9 +32,28 @@ func GetToken(c context.Context, r *http.Request) (*Token, error) {
 	return &token, err
 }
 
-// ClearToken deletes the token in the response to the client as well as deletes the token
+func Signup(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials, account *Account) error {
+	astore := NewAccountStore()
+	tstore := NewTokenStore()
+
+	accountKey, err := astore.Create(c, creds, account)
+	if err != nil {
+		return errors.New("failed to create account")
+	}
+	token, err := tstore.Create(c, accountKey)
+
+	if accepts(r, "json") {
+		setHeaderToken(w, token.Key)
+	} else {
+		setAuthCookieToken(w, token.Key)
+	}
+
+	return nil
+}
+
+// Signout deletes the token in the response to the client as well as deletes the token
 // in the database to ensure it is no longer usable
-func ClearToken(c context.Context, w http.ResponseWriter, r *http.Request) error {
+func Signout(c context.Context, w http.ResponseWriter, r *http.Request) error {
 	var err error
 	var key *datastore.Key
 
@@ -119,6 +138,20 @@ func clearCookie(w http.ResponseWriter) {
 	})
 }
 
+func setAuthCookieToken(w http.ResponseWriter, token *datastore.Key) {
+	http.SetCookie(w, &http.Cookie{
+		Name:     cookieName,
+		Expires:  time.Now().Add(time.Hour * 24 * 14),
+		HttpOnly: true,
+		Secure:   !appengine.IsDevAppServer(),
+		Value:    token.Encode(),
+	})
+}
+
+func setHeaderToken(w http.ResponseWriter, tokenKey *datastore.Key) {
+	w.Header().Set("Authorization", tokenKey.Encode())
+}
+
 func getTokenKeyFromHeader(r *http.Request) (*datastore.Key, error) {
 	h := r.Header.Get("Authorization")
 	tokenKey, err := datastore.DecodeKey(h[len("token="):])
@@ -145,4 +178,8 @@ func getTokenKeyFromCookie(r *http.Request) (*datastore.Key, error) {
 
 func clearHeader(w http.ResponseWriter) {
 	w.Header().Del("Authorization")
+}
+
+func accepts(r *http.Request, t string) bool {
+	return strings.Index(r.Header.Get("Accept"), t) > 0
 }
