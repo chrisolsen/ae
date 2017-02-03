@@ -50,6 +50,7 @@ func (m *Middleware) AuthenticateCookie(c context.Context, w http.ResponseWriter
 		}
 		return c
 	}
+
 	token, err := m.getToken(c, cookie.Value)
 	if err != nil {
 		if !m.ContinueWithBadToken {
@@ -178,7 +179,7 @@ func (m *Middleware) getToken(c context.Context, rawToken string) (*Token, error
 	var err error
 
 	var token Token
-	_, err = memcache.JSON.Get(c, rawToken, &token)
+	_, err = memcache.Gob.Get(c, rawToken, &token)
 	if err != nil && err != memcache.ErrCacheMiss {
 		return nil, err
 	}
@@ -190,20 +191,21 @@ func (m *Middleware) getToken(c context.Context, rawToken string) (*Token, error
 		}
 
 		var store = NewTokenStore()
-		err = store.Get(c, tokenKey, &token)
+		token.Key, err = store.Get(c, tokenKey, &token)
 		if err != nil {
 			return nil, err
 		}
 
 		// add the token to memcache
-		err = memcache.JSON.Set(c, &memcache.Item{
+		err = memcache.Gob.Set(c, &memcache.Item{
 			Key:        token.Value(),
 			Object:     token,
 			Expiration: -1 * time.Since(token.Expiry),
 		})
-	}
 
-	return &token, err
+		return &token, err
+	}
+	return &token, nil
 }
 
 // Creates a new token and links it to the account for the old token
