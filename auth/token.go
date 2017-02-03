@@ -62,10 +62,7 @@ func NewTokenStore() TokenStore {
 // other than the account key
 func (s *TokenStore) Create(c context.Context, accountKey *datastore.Key) (*Token, error) {
 	var token Token
-	key, err := s.Base.Create(c, &token, accountKey)
-	if err != nil {
-		return nil, err
-	}
-	token.Key = key
-	return &token, nil
+	var err error
+	token.Key, err = s.Base.Create(c, &token, accountKey)
+	return &token, err
 }

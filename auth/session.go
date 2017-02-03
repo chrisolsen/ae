@@ -22,7 +22,7 @@ func (s *Session) Account(c context.Context, dst interface{}) (*datastore.Key, e
 	}
 
 	store := NewAccountStore()
-	return key, store.Get(c, key, dst)
+	return store.Get(c, key, dst)
 }
 
 // SignedIn returns boolean value indicating if the user is signed in or not

@@ -52,24 +52,24 @@ func (b Base) Exists(c context.Context, key *datastore.Key) bool {
 
 // Get attempts to return the cached model, if no cached data exists, it then
 // fetches the data from the database and caches the data
-func (b Base) Get(c context.Context, key *datastore.Key, dst interface{}) error {
+func (b Base) Get(c context.Context, key *datastore.Key, dst interface{}) (*datastore.Key, error) {
 	encodedKey := key.Encode()
 	_, err := memcache.Gob.Get(c, encodedKey, dst)
 	if err != nil {
 		if err != memcache.ErrCacheMiss {
-			return fmt.Errorf("memcache get: %v", err)
+			return nil, fmt.Errorf("memcache get: %v", err)
 		}
 	} else {
-		return nil
+		return key, nil
 	}
 
 	err = datastore.Get(c, key, dst)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	memcache.Gob.Set(c, &memcache.Item{Key: encodedKey, Object: dst})
-	return nil
+	return key, nil
 }
 
 // GetByParent gets all the models that are children to the parent

@@ -28,7 +28,7 @@ func GetToken(c context.Context, r *http.Request) (*Token, error) {
 
 	tstore := NewTokenStore()
 	var token Token
-	err = tstore.Get(c, key, &token)
+	token.Key, err = tstore.Get(c, key, &token)
 	return &token, err
 }
 
