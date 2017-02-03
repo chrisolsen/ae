@@ -11,15 +11,6 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-const accountsTable string = "accounts"
-
-// AccountPayload contains the account and related data
-type AccountPayload struct {
-	Account
-
-	// other attributes and relations
-}
-
 // Account model
 type Account struct {
 	model.Base
