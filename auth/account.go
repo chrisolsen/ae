@@ -37,7 +37,7 @@ func NewAccountStore() AccountStore {
 	return s
 }
 
-// Create creates a new account and creates its default subscriptions
+// Create creates a new account
 func (s *AccountStore) Create(c context.Context, creds *Credentials, account *Account) (*datastore.Key, error) {
 	var err error
 	var accountKey *datastore.Key
