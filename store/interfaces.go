@@ -6,19 +6,19 @@ import (
 )
 
 type Getter interface {
-	Get(c context.Context, key *datastore.Key, dst Model) error
+	Get(c context.Context, key *datastore.Key, dst interface{}) error
 }
 
 type Updater interface {
-	Update(c context.Context, key *datastore.Key, model interface{}) error
+	Update(c context.Context, key *datastore.Key, src interface{}) error
 }
 
 type Creater interface {
-	Create(c context.Context, model Model, parent *datastore.Key) (*datastore.Key, error)
+	Create(c context.Context, src interface{}, parent *datastore.Key) (*datastore.Key, error)
 }
 
 type Copier interface {
-	Copy(c context.Context, srcKey *datastore.Key, dst Model) error
+	Copy(c context.Context, srcKey *datastore.Key, dst interface{}) error
 }
 
 type Deleter interface {
