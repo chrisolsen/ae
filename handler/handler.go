@@ -185,12 +185,12 @@ func (b *Base) QueryKey(name string) *datastore.Key {
 func (b *Base) PathParam(tpl string) string {
 	path := b.Req.URL.Path
 	startIndex := strings.Index(tpl, ":")
-	endIndex := strings.Index(path[startIndex:], "/")
 	if startIndex == -1 {
 		return ""
 	}
+	endIndex := strings.Index(path[startIndex:], "/")
 	if endIndex == -1 {
-		endIndex = len(path)
+		return path[startIndex:]
 	}
 	return path[startIndex : startIndex+endIndex]
 }
