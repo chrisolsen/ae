@@ -75,7 +75,7 @@ func (s *AccountStore) GetAccountKeyByCredentials(c context.Context, creds *Cred
 	// on initial signup the account key will exist within the credentials
 	if creds.AccountKey != nil {
 		var accountCreds []*Credentials
-		_, err = cstore.GetByParent(c, creds.AccountKey, &accountCreds)
+		_, err = cstore.GetByParent(c, creds.AccountKey, 0, -1, &accountCreds)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find credentials by parent account: %v", err)
 		}

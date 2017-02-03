@@ -72,6 +72,21 @@ func (b Base) Get(c context.Context, key *datastore.Key, dst interface{}) error 
 	return nil
 }
 
-func (b Base) GetByParent(c context.Context, parentKey *datastore.Key, dst interface{}) ([]*datastore.Key, error) {
-	return datastore.NewQuery(b.TableName).Ancestor(parentKey).GetAll(c, dst)
+// GetByParent gets all the models that are children to the parent
+func (b Base) GetByParent(c context.Context, parentKey *datastore.Key, offset, limit int, dst interface{}) ([]*datastore.Key, error) {
+	return datastore.
+		NewQuery(b.TableName).
+		Ancestor(parentKey).
+		Limit(limit).
+		Offset(offset).
+		GetAll(c, dst)
+}
+
+// GetAll .
+func (b Base) GetAll(c context.Context, offset, limit int, dst interface{}) ([]*datastore.Key, error) {
+	return datastore.
+		NewQuery(b.TableName).
+		Limit(limit).
+		Offset(offset).
+		GetAll(c, dst)
 }
