@@ -134,7 +134,6 @@ func clearCookie(w http.ResponseWriter) {
 		Expires:  time.Time{},
 		HttpOnly: true,
 		Secure:   !appengine.IsDevAppServer(),
-		Value:    "o7awyeu;oiqejwuriueysdfia;lkjsd;faseufhsdjhvf", // ensure it is erased
 	})
 }
 
