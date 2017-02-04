@@ -185,7 +185,12 @@ func (b *Base) QueryKey(name string) *datastore.Key {
 func (b *Base) PathParam(tpl string) string {
 	path := b.Req.URL.Path
 	startIndex := strings.Index(tpl, ":")
+	// no :param
 	if startIndex == -1 {
+		return ""
+	}
+	// exists in template, but not in path
+	if startIndex > len(path) {
 		return ""
 	}
 	endIndex := strings.Index(path[startIndex:], "/")
