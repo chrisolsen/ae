@@ -93,7 +93,7 @@ func (s *AccountStore) GetAccountKeyByCredentials(c context.Context, creds *Cred
 
 	// by username
 	var userNameCreds []*Credentials
-	_, err = cstore.GetByUsername(c, creds.Username, &userNameCreds)
+	ckeys, err := cstore.GetByUsername(c, creds.Username, &userNameCreds)
 	if err != nil {
 		return nil, err
 	}
@@ -106,5 +106,5 @@ func (s *AccountStore) GetAccountKeyByCredentials(c context.Context, creds *Cred
 	if err != nil {
 		return nil, err
 	}
-	return userNameCreds[0].Key.Parent(), nil
+	return ckeys[0].Parent(), nil
 }
