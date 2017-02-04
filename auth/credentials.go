@@ -38,16 +38,19 @@ func (c *Credentials) Valid() bool {
 	return p || l
 }
 
+// CredentialStore .
 type CredentialStore struct {
 	store.Base
 }
 
+// NewCredentialStore .
 func NewCredentialStore() CredentialStore {
 	s := CredentialStore{}
 	s.TableName = "credentials"
 	return s
 }
 
+// Create .
 func (s *CredentialStore) Create(c context.Context, creds *Credentials, accountKey *datastore.Key) (*datastore.Key, error) {
 	if !creds.Valid() {
 		return nil, errors.New("Invalid credentials")
@@ -75,6 +78,7 @@ func (s *CredentialStore) Create(c context.Context, creds *Credentials, accountK
 	return s.Base.Create(c, creds, accountKey)
 }
 
+// GetAccountKeyByProvider .
 func (s *CredentialStore) GetAccountKeyByProvider(c context.Context, creds *Credentials) (*datastore.Key, error) {
 	keys, err := datastore.NewQuery(s.TableName).
 		Filter("ProviderID =", creds.ProviderID).

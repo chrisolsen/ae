@@ -32,6 +32,8 @@ func GetToken(c context.Context, r *http.Request) (*Token, error) {
 	return &token, err
 }
 
+// Signup creates a user account and links up the credentials. Based on the request type an auth cookie
+// or header token will be set with an auth token.
 func Signup(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials, account *Account) error {
 	astore := NewAccountStore()
 	tstore := NewTokenStore()

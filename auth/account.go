@@ -30,10 +30,12 @@ type Account struct {
 	Photo attachment.File `json:"photo"`
 }
 
+// AccountStore .
 type AccountStore struct {
 	store.Base
 }
 
+// NewAccountStore returns a setup AccountStore
 func NewAccountStore() AccountStore {
 	s := AccountStore{}
 	s.TableName = "accounts"
