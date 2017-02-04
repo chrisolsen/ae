@@ -15,14 +15,16 @@ var (
 type Session struct{}
 
 // Account fetches the account either from the cache or datastore
-func (s *Session) Account(c context.Context, dst interface{}) (*datastore.Key, error) {
+func (s *Session) Account(c context.Context) (*Account, error) {
 	key, err := s.AccountKey(c)
 	if err != nil {
 		return nil, err
 	}
 
 	store := NewAccountStore()
-	return store.Get(c, key, dst)
+	var account Account
+	account.Key, err = store.Get(c, key, &account)
+	return &account, err
 }
 
 // SignedIn returns boolean value indicating if the user is signed in or not
