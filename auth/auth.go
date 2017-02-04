@@ -57,30 +57,45 @@ func Signout(c context.Context, w http.ResponseWriter, r *http.Request) error {
 	var err error
 	var key *datastore.Key
 
-	key, err = getTokenKeyFromCookie(r)
-	if err != nil {
-		clearCookie(w)
-		return datastore.Delete(c, key)
-	}
-
-	key, err = getTokenKeyFromHeader(r)
-	if err != nil {
+	if accepts(r, "json") {
+		key, err = getTokenKeyFromHeader(r)
+		if err != nil {
+			return fmt.Errorf("failed to get token from header: %v", err)
+		}
 		clearHeader(w)
-		return datastore.Delete(c, key)
+		err = datastore.Delete(c, key)
+	} else {
+		key, err = getTokenKeyFromCookie(r)
+		if err != nil {
+			return fmt.Errorf("failed to get token from cookie: %v", err)
+		}
+		clearCookie(w)
+		err = datastore.Delete(c, key)
 	}
 
-	return nil
+	return err
 }
 
 // Authorize .
-func Authorize(c context.Context, creds *Credentials) (*Token, error) {
+func Authorize(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials) (*Token, error) {
+	var token *Token
+	var err error
 	if len(creds.ProviderName) > 0 {
-		// Calls the private method with an appengine urlGetter.
-		// This allows for internal testing of the authenticate method while
-		// stubbing out the external auth service
-		return authorizeOut(c, creds, appEngineURLGetter{Ctx: c})
+		token, err = authorizeOut(c, creds, appEngineURLGetter{Ctx: c})
+	} else {
+		token, err = authorizeIn(c, creds)
 	}
-	return authorizeIn(c, creds)
+	if err != nil {
+		return nil, err
+	}
+
+	if accepts(r, "json") {
+		setHeaderToken(w, token.Key)
+	} else {
+		setAuthCookieToken(w, token.Key)
+	}
+
+	return token, nil
 }
 
 func authorizeIn(c context.Context, creds *Credentials) (*Token, error) {
