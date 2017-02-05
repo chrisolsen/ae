@@ -153,7 +153,7 @@ func (m *Middleware) getToken(c context.Context, rawToken string) (*Token, error
 	var token Token
 	_, err = memcache.Gob.Get(c, rawToken, &token)
 	if err != nil && err != memcache.ErrCacheMiss {
-		return nil, err
+		return nil, fmt.Errorf("faild to get token from memcache: %v", err)
 	}
 
 	if err == memcache.ErrCacheMiss {
