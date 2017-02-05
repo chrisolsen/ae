@@ -165,27 +165,27 @@ func (m *Middleware) getToken(c context.Context, rawToken string) (*Token, error
 		var store = NewTokenStore()
 		token.Key, err = store.Get(c, tokenKey, &token)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get token from store: %v", err)
 		}
 
 		// add the token to memcache
-		err = memcache.Gob.Set(c, &memcache.Item{
+		memcache.Gob.Set(c, &memcache.Item{
 			Key:        token.Value(),
 			Object:     token,
 			Expiration: -1 * time.Since(token.Expiry),
 		})
-
-		return &token, err
 	}
 	return &token, nil
 }
 
 // Creates a new token and links it to the account for the old token
-func (m *Middleware) getNewToken(c context.Context, accountKey *datastore.Key) (*Token, error) {
-	if accountKey == nil {
-		return nil, errors.New("account key is required to create a token")
+func (m *Middleware) getNewToken(c context.Context, oldToken *Token) (*Token, error) {
+	store := NewTokenStore()
+	newToken, err := store.Create(c, oldToken.Key.Parent())
+	if err != nil {
+		return nil, err
 	}
 
-	store := NewTokenStore()
-	return store.Create(c, accountKey)
+	store.Delete(c, oldToken.Key)
+	return newToken, nil
 }
