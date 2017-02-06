@@ -12,7 +12,6 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
-	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/log"
 )
 
@@ -162,74 +161,6 @@ func (b *Base) Abort(statusCode int, err error) {
 		b.Res.WriteHeader(statusCode)
 		json.NewEncoder(b.Res).Encode(hErr)
 	}
-}
-
-// QueryParam obtains the value matching the passed in name within the request
-// url's querystring
-func (b *Base) QueryParam(name string) string {
-	return b.Req.URL.Query().Get(name)
-}
-
-// QueryKey returns the decoded *datastore.Key value from the query params
-func (b *Base) QueryKey(name string) *datastore.Key {
-	raw := b.QueryParam(name)
-	if len(raw) == 0 {
-		return nil
-	}
-
-	key, _ := datastore.DecodeKey(raw)
-	return key
-}
-
-// PathParam returns the decoded *datastore.Key value from the url
-func (b *Base) PathParam(tpl string) string {
-	path := b.Req.URL.Path
-	startIndex := strings.Index(tpl, ":")
-	// no :param
-	if startIndex == -1 {
-		return ""
-	}
-	// exists in template, but not in path
-	if startIndex > len(path) {
-		return ""
-	}
-	endIndex := strings.Index(path[startIndex:], "/")
-	if endIndex == -1 {
-		return path[startIndex:]
-	}
-	return path[startIndex : startIndex+endIndex]
-}
-
-// PathParamByIndex extracts the path param by index. Negative indexes are allowed.
-func (b *Base) PathParamByIndex(index int) string {
-	parts := strings.Split(b.Req.URL.Path, "/")
-	count := len(parts)
-
-	if index < 0 && (index+1)*-1 > count {
-		return ""
-	}
-	if index > count {
-		return ""
-	}
-
-	if index < 0 {
-		return parts[count+index]
-	}
-
-	return parts[index]
-}
-
-// PathKey returns the decodded *datastore.Key value from the url
-func (b *Base) PathKey(tpl string) *datastore.Key {
-	rawKey := b.PathParam(tpl)
-	if len(rawKey) == 0 {
-		return nil
-	}
-	key, err := datastore.DecodeKey(rawKey)
-	if err != nil {
-		return nil
-	}
-	return key
 }
 
 // Redirect is a simple wrapper around the core http method

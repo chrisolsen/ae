@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/chrisolsen/ae/handler"
+	"github.com/chrisolsen/ae/route"
 	"golang.org/x/net/context"
 )
 
@@ -27,14 +28,15 @@ func (h Handler) ServeHTTP(c context.Context, w http.ResponseWriter, r *http.Req
 
 // GET /images/:name?w={100}&h={100}
 func (h *Handler) fetch() {
-	name := h.PathParam("/images/:name")
+	url := h.Req.URL
+	name := route.Param(url, "/images/:name")
 	if name == "" {
 		h.Abort(http.StatusBadRequest, errors.New("name value required"))
 		return
 	}
 
-	width, _ := strconv.Atoi(h.QueryParam("w"))
-	height, _ := strconv.Atoi(h.QueryParam("h"))
+	width, _ := strconv.Atoi(url.Query().Get("w"))
+	height, _ := strconv.Atoi(url.Query().Get("h"))
 	if width+height == 0 {
 		h.Abort(http.StatusBadRequest, errors.New("width or height is required"))
 		return
@@ -45,10 +47,10 @@ func (h *Handler) fetch() {
 	if h.Req.TLS == nil {
 		scheme = "http"
 	}
-	url, err := SizedURL(h.Ctx, scheme, name, width, height)
+	sizedURL, err := SizedURL(h.Ctx, scheme, name, width, height)
 	if err != nil {
 		h.Abort(http.StatusInternalServerError, fmt.Errorf("failed to get sized image: %v", err))
 		return
 	}
-	http.Redirect(h.Res, h.Req, url, http.StatusMovedPermanently)
+	http.Redirect(h.Res, h.Req, sizedURL, http.StatusMovedPermanently)
 }
