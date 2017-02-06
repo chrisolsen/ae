@@ -42,7 +42,7 @@ func (r *Route) Key(pattern string) *datastore.Key {
 // Matches checks if the request url matches the passed in pattern. Patterns need to
 // define the arguments at least one leading `:` character.
 // ex.
-//  /foo/:var/bar     // OK
+//  /foo/:var/bar
 // This method does not validate pattern argument data formats.
 func Matches(url *url.URL, pattern string) bool {
 	if strings.Index(pattern, ":") == -1 {
@@ -50,12 +50,14 @@ func Matches(url *url.URL, pattern string) bool {
 	}
 
 	pathParts, patternParts := slice(url.Path), slice(pattern)
-	if len(pathParts) != len(patternParts) {
+	patternPartCount, pathPartCount := len(patternParts), len(pathParts)
+	if pathPartCount != patternPartCount {
 		return false
 	}
 
-	for i := 0; i < len(pathParts); i++ {
+	for i := 0; i < patternPartCount; i++ {
 		pathPart, patternPart := pathParts[i], patternParts[i]
+
 		if len(patternPart) == 0 || patternPart[0] == ':' {
 			continue
 		}
