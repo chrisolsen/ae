@@ -5,6 +5,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/url"
 
@@ -170,4 +171,38 @@ func (b *Base) Redirect(url string, perm bool) {
 		status = http.StatusMovedPermanently
 	}
 	http.Redirect(b.Res, b.Req, url, status)
+}
+
+// Defaults for rendering
+var (
+	LayoutPath       = "layouts/application.html"
+	ViewPath         = "views"
+	ParentLayoutName = "layout"
+)
+
+// Render pre-cachces and renders template
+func (b *Base) Render(template string, data interface{}, fns template.FuncMap) {
+	tmpl := loadTemplate(template, fns)
+	tmpl.ExecuteTemplate(b.Res, ParentLayoutName, data)
+}
+
+var loadedTemplates = make(map[string]*template.Template)
+
+func loadTemplate(name string, fns template.FuncMap) *template.Template {
+	if loadedTemplates[name] != nil {
+		return loadedTemplates[name]
+	}
+
+	view := fmt.Sprintf("%s/%s.html", ViewPath, name)
+	t := template.New(name)
+	if fns != nil {
+		t.Funcs(fns)
+	}
+	template, err := t.ParseFiles(LayoutPath, view)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to load template: %s => %v", view, err))
+	}
+
+	loadedTemplates[name] = template
+	return template
 }
