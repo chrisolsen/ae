@@ -24,6 +24,10 @@ func (r *Route) Matches(pattern string) bool {
 	return Matches(r.URL, pattern)
 }
 
+func (r *Route) Contains(val string) bool {
+	return Contains(r.URL, val)
+}
+
 // Params wraps the public Params() method
 func (r *Route) Params(pattern string) (map[string]string, error) {
 	return Params(r.URL, pattern)
@@ -37,6 +41,11 @@ func (r *Route) Param(pattern string) string {
 // Key wraps the public Key() method
 func (r *Route) Key(pattern string) *datastore.Key {
 	return Key(r.URL, pattern)
+}
+
+// Contains wraps the strings.Contains method
+func Contains(url *url.URL, val string) bool {
+	return strings.Contains(url.Path, val)
 }
 
 // Matches checks if the request url matches the passed in pattern. Patterns need to
