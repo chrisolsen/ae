@@ -1,8 +1,97 @@
 package route
 
-import "testing"
-import "net/url"
-import "reflect"
+import (
+	"fmt"
+	"net/url"
+	"reflect"
+	"testing"
+
+	"github.com/chrisolsen/ae/testutils"
+	"google.golang.org/appengine/datastore"
+)
+
+func TestRouteContains(t *testing.T) {
+	type test struct {
+		url      string
+		val      string
+		expected bool
+	}
+
+	tests := []test{
+		test{url: "/foo/bar", val: "bar", expected: true},
+		test{url: "/foo/bar/blah", val: "bar", expected: true},
+		test{url: "http://blah.com/foo/bar?blah=bar#blah", val: "blah", expected: false},
+	}
+
+	for _, test := range tests {
+		url, _ := url.Parse(test.url)
+		r := Route{URL: url}
+		if r.Contains(test.val) != test.expected {
+			t.Errorf("expected: %v got %v", test.url, url)
+		}
+	}
+}
+
+func TestRouteKey(t *testing.T) {
+	type test struct {
+		url     string
+		pattern string
+		key     *datastore.Key
+	}
+
+	var T = testutils.T{}
+	defer T.Close()
+	c := T.GetContext()
+
+	validKey := datastore.NewIncompleteKey(c, "users", nil)
+
+	tests := []test{
+		test{
+			url:     fmt.Sprintf("/foo/%s/bar", validKey.Encode()),
+			pattern: "/foo/:key/bar",
+			key:     validKey,
+		},
+		test{
+			url:     fmt.Sprintf("/foo/%s", validKey.Encode()),
+			pattern: "/foo/:key",
+			key:     validKey,
+		},
+		test{
+			url:     fmt.Sprintf("/%s/bar", validKey.Encode()),
+			pattern: "/:key/bar",
+			key:     validKey,
+		},
+		test{
+			url:     fmt.Sprintf("/%s", validKey.Encode()),
+			pattern: "/:key",
+			key:     validKey,
+		},
+		test{
+			url:     "/foo/some_invalid_value/bar",
+			pattern: "/foo/:key/bar",
+			key:     nil,
+		},
+		test{
+			url:     "/foo/some_invalid_value/bar",
+			pattern: "/foo/bar",
+			key:     nil,
+		},
+	}
+
+	for _, test := range tests {
+		url, _ := url.Parse(test.url)
+		r := Route{URL: url}
+		key := r.Key(test.pattern)
+		if key == nil && test.key != nil {
+			t.Errorf("failed to extract key from: %v with %v", url, test.pattern)
+			continue
+		}
+		if !key.Equal(test.key) {
+			t.Errorf("keys don't match: %v <=> %v", url, test.url)
+			continue
+		}
+	}
+}
 
 func TestRoutesMatch(t *testing.T) {
 
@@ -28,7 +117,8 @@ func TestRoutesMatch(t *testing.T) {
 
 	for _, test := range tests {
 		url, _ := url.Parse(test.path)
-		if test.matches != Matches(url, test.pattern) {
+		r := Route{URL: url}
+		if test.matches != r.Matches(test.pattern) {
 			t.Errorf("Fail: %s <=> %s", test.pattern, test.path)
 		}
 	}
@@ -58,7 +148,8 @@ func TestRoutesParam(t *testing.T) {
 
 	for _, test := range tests {
 		url, _ := url.Parse(test.path)
-		if test.param != Param(url, test.pattern) {
+		r := Route{URL: url}
+		if test.param != r.Param(test.pattern) {
 			t.Errorf("Fail: %s <=> %s", test.pattern, test.path)
 		}
 	}
@@ -112,7 +203,8 @@ func TestRoutesParams(t *testing.T) {
 
 	for _, test := range tests {
 		url, _ := url.Parse(test.path)
-		args, err := Params(url, test.pattern)
+		r := Route{URL: url}
+		args, err := r.Params(test.pattern)
 		if err != test.err {
 			t.Errorf("Fail: %v => %v", err, test.err)
 			continue

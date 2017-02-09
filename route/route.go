@@ -89,9 +89,6 @@ func Params(url *url.URL, pattern string) (map[string]string, error) {
 	params := make(map[string]string)
 	for i := 0; i < len(pathParts); i++ {
 		pathPart, patternPart := pathParts[i], patternParts[i]
-		if len(patternPart) == 0 {
-			continue
-		}
 		if patternPart[0] == ':' {
 			params[patternPart[1:]] = pathPart
 		}
