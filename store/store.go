@@ -36,20 +36,6 @@ func (b Base) Update(c context.Context, key *datastore.Key, data interface{}) er
 	return err
 }
 
-// Exists checks to see if the data exist in the database
-func (b Base) Exists(c context.Context, key *datastore.Key) bool {
-	keys, err := datastore.NewQuery(b.TableName).
-		KeysOnly().
-		Filter("__key__ =", key).
-		GetAll(c, nil)
-
-	if err != nil {
-		return false
-	}
-
-	return len(keys) > 0
-}
-
 // Get attempts to return the cached model, if no cached data exists, it then
 // fetches the data from the database and caches the data
 func (b Base) Get(c context.Context, key *datastore.Key, dst interface{}) (*datastore.Key, error) {
