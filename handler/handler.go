@@ -180,7 +180,11 @@ var (
 	ParentLayoutName = "layout"
 )
 
-// Render pre-cachces and renders template
+// Render pre-cachces and renders template. This method uses some default value config
+// values that can be overrridden.
+//  LayoutPath       = "layouts/application.html"
+//  ViewPath         = "views"
+//  ParentLayoutName = "layout"
 func (b *Base) Render(template string, data interface{}, fns template.FuncMap) {
 	tmpl := loadTemplate(template, fns)
 	tmpl.ExecuteTemplate(b.Res, ParentLayoutName, data)
