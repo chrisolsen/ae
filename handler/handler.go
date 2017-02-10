@@ -41,6 +41,45 @@ type Base struct {
 	Ctx context.Context
 	Req *http.Request
 	Res http.ResponseWriter
+
+	config    Config
+	templates map[string]*template.Template
+}
+
+// Config contains the custom handler configuration settings
+type Config struct {
+	LayoutPath       string
+	ViewPath         string
+	ParentLayoutName string
+}
+
+var defaultConfig = Config{
+	LayoutPath:       "layouts/application.html",
+	ViewPath:         "views",
+	ParentLayoutName: "layout",
+}
+
+// New allows one to override the default configuration settings.
+//  func NewRootHandler() rootHandler {
+//  	return rootHandler{Base: handler.New(&handler.Config{
+//  		LayoutPath: "layouts/admin.html",
+//  	})}
+//  }
+func New(c *Config) Base {
+	if c == nil {
+		c = &defaultConfig
+	}
+	b := Base{config: *c} // copy the passed in pointer
+	b.templates = make(map[string]*template.Template)
+	return b
+}
+
+// Default uses the default config settings
+//  func NewRootHandler() rootHandler {
+//  	return rootHandler{Base: handler.Default()}
+//  }
+func Default() Base {
+	return New(nil)
 }
 
 // OriginMiddleware returns a middleware function that validates the origin
@@ -173,40 +212,27 @@ func (b *Base) Redirect(url string, perm bool) {
 	http.Redirect(b.Res, b.Req, url, status)
 }
 
-// Defaults for rendering
-var (
-	LayoutPath       = "layouts/application.html"
-	ViewPath         = "views"
-	ParentLayoutName = "layout"
-)
-
-// Render pre-cachces and renders template. This method uses some default value config
-// values that can be overrridden.
-//  LayoutPath       = "layouts/application.html"
-//  ViewPath         = "views"
-//  ParentLayoutName = "layout"
+// Render pre-cachces and renders template.
 func (b *Base) Render(template string, data interface{}, fns template.FuncMap) {
-	tmpl := loadTemplate(template, fns)
-	tmpl.ExecuteTemplate(b.Res, ParentLayoutName, data)
+	tmpl := b.loadTemplate(template, fns)
+	tmpl.ExecuteTemplate(b.Res, b.config.ParentLayoutName, data)
 }
 
-var loadedTemplates = make(map[string]*template.Template)
-
-func loadTemplate(name string, fns template.FuncMap) *template.Template {
-	if loadedTemplates[name] != nil {
-		return loadedTemplates[name]
+func (b *Base) loadTemplate(name string, fns template.FuncMap) *template.Template {
+	if b.templates[name] != nil {
+		return b.templates[name]
 	}
 
-	view := fmt.Sprintf("%s/%s.html", ViewPath, name)
+	view := fmt.Sprintf("%s/%s.html", b.config.ViewPath, name)
 	t := template.New(name)
 	if fns != nil {
 		t.Funcs(fns)
 	}
-	template, err := t.ParseFiles(LayoutPath, view)
+	template, err := t.ParseFiles(b.config.LayoutPath, view)
 	if err != nil {
 		panic(fmt.Sprintf("Failed to load template: %s => %v", view, err))
 	}
 
-	loadedTemplates[name] = template
+	b.templates[name] = template
 	return template
 }
