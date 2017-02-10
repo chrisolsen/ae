@@ -101,3 +101,8 @@ func (s *CredentialStore) GetAccountKeyByProvider(c context.Context, creds *Cred
 func (s *CredentialStore) GetByUsername(c context.Context, username string, dst interface{}) ([]*datastore.Key, error) {
 	return datastore.NewQuery(s.TableName).Filter("Username =", username).GetAll(c, dst)
 }
+
+// GetByAccount .
+func (s *CredentialStore) GetByAccount(c context.Context, accountKey *datastore.Key, dst interface{}) ([]*datastore.Key, error) {
+	return datastore.NewQuery(s.TableName).Ancestor(accountKey).GetAll(c, dst)
+}
