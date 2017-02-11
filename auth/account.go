@@ -17,7 +17,7 @@ type Account struct {
 
 	// Allows for manually making a user an owner via the datastore web interface.
 	// Any additional control should exist within the app with a Roles table
-	IsOwner   bool   `json:"-" datastore:",noindex"`
+	IsOwner   bool   `json:"isOwner,omitempty" datastore:",noindex"`
 	FirstName string `json:"firstName" datastore:",noindex"`
 	LastName  string `json:"lastName" datastore:",noindex"`
 	Gender    string `json:"gender" datastore:",noindex"`
