@@ -134,6 +134,7 @@ func validateOrigin(origin string, allowed []string) bool {
 // ToJSON encodes an interface into the response writer with a default http
 // status code of 200
 func (b *Base) ToJSON(data interface{}) {
+	b.Res.Header().Add("Content-Type", "application/json")
 	err := json.NewEncoder(b.Res).Encode(data)
 	if err != nil {
 		b.Abort(http.StatusInternalServerError, fmt.Errorf("Decoding JSON: %v", err))
@@ -143,6 +144,7 @@ func (b *Base) ToJSON(data interface{}) {
 // ToJSONWithStatus json encodes an interface into the response writer with a
 // custom http status code
 func (b *Base) ToJSONWithStatus(data interface{}, status int) {
+	b.Res.Header().Add("Content-Type", "application/json")
 	b.Res.WriteHeader(status)
 	b.ToJSON(data)
 }
