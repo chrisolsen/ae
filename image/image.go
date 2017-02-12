@@ -8,8 +8,8 @@ import (
 
 	"github.com/chrisolsen/ae/attachment"
 	"github.com/disintegration/imaging"
-
 	"golang.org/x/net/context"
+	"google.golang.org/appengine"
 	"google.golang.org/appengine/file"
 	"google.golang.org/appengine/urlfetch"
 )
@@ -24,7 +24,7 @@ func SizedURL(c context.Context, scheme, name string, width, height int) (string
 	// check if image already exists
 	sizeName := fmt.Sprintf("%s_w%dh%d", name, width, height)
 	sizedURL := fmt.Sprintf("%s://storage.googleapis.com/%s/%s", scheme, bucketName, sizeName)
-	client := urlfetch.Client(c)
+	client := &http.Client{Transport: &urlfetch.Transport{Context: c, AllowInvalidServerCertificate: appengine.IsDevAppServer()}}
 	resp, err := client.Head(sizedURL)
 	if err != nil {
 		return "", fmt.Errorf("failed HEAD request: %v", err)
