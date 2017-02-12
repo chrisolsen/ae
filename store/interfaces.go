@@ -6,7 +6,7 @@ import (
 )
 
 type Getter interface {
-	Get(c context.Context, key *datastore.Key, dst interface{}) error
+	Get(c context.Context, key *datastore.Key, dst interface{}) (*datastore.Key, error)
 }
 
 type Updater interface {
