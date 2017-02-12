@@ -199,7 +199,7 @@ func (b *Base) Abort(statusCode int, err error) {
 	// log method to appengine log
 	log.Errorf(c, hErr.Error())
 
-	if strings.Index(b.Req.Header.Get("Accept"), "application/json") > 0 {
+	if strings.Index(b.Req.Header.Get("Accept"), "application/json") >= 0 {
 		b.Res.WriteHeader(statusCode)
 		json.NewEncoder(b.Res).Encode(hErr)
 	}
