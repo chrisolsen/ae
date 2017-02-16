@@ -148,8 +148,10 @@ func authorizeOut(c context.Context, creds *Credentials, urlGetter urlGetter) (*
 func clearCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName,
+		Path:     "/",
 		Expires:  time.Time{},
 		HttpOnly: true,
+		Value:    "",
 		Secure:   !appengine.IsDevAppServer(),
 	})
 }
@@ -157,6 +159,7 @@ func clearCookie(w http.ResponseWriter) {
 func setAuthCookieToken(w http.ResponseWriter, token *datastore.Key) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName,
+		Path:     "/",
 		Expires:  time.Now().Add(time.Hour * 24 * 14),
 		HttpOnly: true,
 		Secure:   !appengine.IsDevAppServer(),
