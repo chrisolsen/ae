@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"strings"
 
 	uuid "github.com/satori/go.uuid"
 	"golang.org/x/net/context"
-	"google.golang.org/appengine"
 	"google.golang.org/appengine/urlfetch"
 )
 
@@ -64,12 +62,7 @@ func (as Store) CreateWithData(c context.Context, data []byte, contentType strin
 // the returned data as an attachment
 func (as Store) CreateWithURL(c context.Context, url string) (*File, error) {
 	// get image
-	client := &http.Client{
-		Transport: &urlfetch.Transport{
-			Context: c,
-			AllowInvalidServerCertificate: appengine.IsDevAppServer(),
-		},
-	}
+	client := urlfetch.Client(c)
 	resp, err := client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get image with URL: %v", err)
