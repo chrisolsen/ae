@@ -4,7 +4,7 @@ import "errors"
 
 type page map[string]interface{}
 
-// New creates a new page
+// NewPage creates a new page
 func NewPage() page {
 	return page(make(map[string]interface{}))
 }

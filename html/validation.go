@@ -7,10 +7,13 @@ import (
 	"strings"
 )
 
+// Errors allows multiple errors to be contained within a single error, which simplifies
+// returning validation errors to the client.
 type Errors struct {
 	list []error
 }
 
+// Add appends the error to the list
 func (e Errors) Add(err error) {
 	e.list = append(e.list, err)
 }
