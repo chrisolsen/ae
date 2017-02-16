@@ -1,9 +1,11 @@
-package page
+package html
+
+import "errors"
 
 type page map[string]interface{}
 
 // New creates a new page
-func New() page {
+func NewPage() page {
 	return page(make(map[string]interface{}))
 }
 
@@ -11,11 +13,11 @@ func New() page {
 func (p page) SetError(err interface{}) {
 	switch err.(type) {
 	case string:
-		p["Error"] = err.(string)
+		p["Error"] = errors.New(err.(string))
 	case error:
-		p["Error"] = err.(error).Error()
+		p["Error"] = err.(error)
 	default:
-		p["Error"] = ""
+		p["Error"] = nil
 	}
 }
 
