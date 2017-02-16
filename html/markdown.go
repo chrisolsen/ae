@@ -1,4 +1,4 @@
-package markdown
+package html
 
 import (
 	"html/template"
@@ -7,7 +7,7 @@ import (
 )
 
 // ToHTML converts text in the markdown syntax to html
-func ToHTML(input string) interface{} {
+func Markdown(input string) interface{} {
 	out := string(blackfriday.MarkdownCommon([]byte(input)))
 	return template.HTML(out)
 }
