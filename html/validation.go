@@ -57,6 +57,6 @@ func ToErrorList(in interface{}) interface{} {
 		lis = append(lis, fmt.Sprintf("<li>%s</li>", e))
 	}
 
-	out := fmt.Sprintf(`<ul class="errors">%s<ul>`, strings.Join(lis, "\n"))
+	out := fmt.Sprintf(`<ul class="errors">%s</ul>`, strings.Join(lis, "\n"))
 	return template.HTML(out)
 }
