@@ -199,22 +199,22 @@ func (b *Base) Abort(statusCode int, err error) {
 	// log method to appengine log
 	log.Errorf(c, hErr.Error())
 
+	b.Res.WriteHeader(statusCode)
 	if strings.Index(b.Req.Header.Get("Accept"), "application/json") >= 0 {
-		b.Res.WriteHeader(statusCode)
 		json.NewEncoder(b.Res).Encode(hErr)
 	}
 }
 
 // Redirect is a simple wrapper around the core http method
 func (b *Base) Redirect(url string, perm bool) {
-	status := http.StatusTemporaryRedirect
+	status := 302
 	if perm {
 		status = http.StatusMovedPermanently
 	}
 	http.Redirect(b.Res, b.Req, url, status)
 }
 
-// Render pre-cachces and renders template.
+// Render pre-caches and renders template.
 func (b *Base) Render(template string, data interface{}, fns template.FuncMap) {
 	tmpl := b.loadTemplate(template, fns)
 	tmpl.ExecuteTemplate(b.Res, b.config.ParentLayoutName, data)
