@@ -19,6 +19,11 @@ type Route struct {
 	URL *url.URL
 }
 
+// New creates a route
+func New(url *url.URL) Route {
+	return Route{URL: url}
+}
+
 // Matches wraps the putblic Matches() method
 func (r *Route) Matches(pattern string) bool {
 	return Matches(r.URL, pattern)
