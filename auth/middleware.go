@@ -149,32 +149,33 @@ func (m *Middleware) AuthenticateToken(c context.Context, w http.ResponseWriter,
 // Gets the token for the rawToken value
 func (m *Middleware) getToken(c context.Context, rawToken string) (*Token, error) {
 	var err error
-
 	var token Token
 	_, err = memcache.Gob.Get(c, rawToken, &token)
-	if err != nil && err != memcache.ErrCacheMiss {
-		return nil, fmt.Errorf("faild to get token from memcache: %v", err)
+	if err == nil {
+		return &token, nil
+	}
+	if err != memcache.ErrCacheMiss {
+		return nil, fmt.Errorf("failed to get token from memcache: %v", err)
 	}
 
-	if err == memcache.ErrCacheMiss {
-		tokenKey, err := datastore.DecodeKey(rawToken)
-		if err != nil {
-			return nil, fmt.Errorf("decoding token key: %v", err)
-		}
-
-		var store = NewTokenStore()
-		token.Key, err = store.Get(c, tokenKey, &token)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get token from store: %v", err)
-		}
-
-		// add the token to memcache
-		memcache.Gob.Set(c, &memcache.Item{
-			Key:        token.Value(),
-			Object:     token,
-			Expiration: -1 * time.Since(token.Expiry),
-		})
+	// not in memcache
+	tokenKey, err := datastore.DecodeKey(rawToken)
+	if err != nil {
+		return nil, fmt.Errorf("decoding token key: %v", err)
 	}
+
+	var store = NewTokenStore()
+	token.Key, err = store.Get(c, tokenKey, &token)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get token from store: %v", err)
+	}
+
+	// add the token to memcache
+	memcache.Gob.Set(c, &memcache.Item{
+		Key:        token.Value(),
+		Object:     token,
+		Expiration: -1 * time.Since(token.Expiry),
+	})
 	return &token, nil
 }
 
