@@ -3,6 +3,7 @@ package image
 import (
 	"errors"
 	"fmt"
+	"image"
 	"net/http"
 	"strings"
 
@@ -33,18 +34,24 @@ func SizedURL(c context.Context, scheme, name string, width, height int) (string
 	if resp.StatusCode == http.StatusOK {
 		return sizedURL, nil
 	}
-
 	// fetch initial image and resize it
 	reader, contentType, err := attachment.NewReader(c, name)
 	if err != nil {
-		return "", fmt.Errorf("reading fetched image: %v", err)
+		return "", fmt.Errorf("failed to get reader: %v", err)
 	}
 	img, err := imaging.Decode(reader)
 	if err != nil {
 		return "", fmt.Errorf("failed image decoding: %v", err)
 	}
 	defer reader.Close()
-	resized := imaging.Resize(img, width, height, imaging.Lanczos)
+
+	var resized *image.NRGBA
+	// crop the image to square dimensions if required
+	if width == height {
+		resized = imaging.Fill(img, width, height, imaging.Center, imaging.Lanczos)
+	} else {
+		resized = imaging.Resize(img, width, height, imaging.Lanczos)
+	}
 
 	// save image to storage
 	writer, err := attachment.NewWriter(c, sizeName, contentType)
