@@ -18,18 +18,18 @@ type Handler struct {
 
 func (h Handler) ServeHTTP(c context.Context, w http.ResponseWriter, r *http.Request) {
 	h.Bind(c, w, r)
-	switch r.Method {
-	case http.MethodGet:
-		h.fetch()
+	route := route.New(r.URL)
+	switch {
+	case route.Matches("/images/:name"):
+		h.fetch(route.Get("name"))
 	default:
 		h.Abort(http.StatusNotFound, nil)
 	}
 }
 
 // GET /images/:name?w={100}&h={100}
-func (h *Handler) fetch() {
+func (h *Handler) fetch(name string) {
 	url := h.Req.URL
-	name := route.Param(url, "/images/:name")
 	if name == "" {
 		h.Abort(http.StatusBadRequest, errors.New("name value required"))
 		return

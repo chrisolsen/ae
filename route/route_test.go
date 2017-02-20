@@ -3,7 +3,6 @@ package route
 import (
 	"fmt"
 	"net/url"
-	"reflect"
 	"testing"
 
 	"github.com/chrisolsen/ae/testutils"
@@ -71,21 +70,16 @@ func TestRouteKey(t *testing.T) {
 			pattern: "/foo/:key/bar",
 			key:     nil,
 		},
-		test{
-			url:     "/foo/some_invalid_value/bar",
-			pattern: "/foo/bar",
-			key:     nil,
-		},
 	}
 
 	for _, test := range tests {
 		url, _ := url.Parse(test.url)
 		r := Route{URL: url}
-		key := r.Key(test.pattern)
-		if key == nil && test.key != nil {
+		if !r.Matches(test.pattern) {
 			t.Errorf("failed to extract key from: %v with %v", url, test.pattern)
 			continue
 		}
+		key := r.Key("key")
 		if !key.Equal(test.key) {
 			t.Errorf("keys don't match: %v <=> %v", url, test.url)
 			continue
@@ -94,7 +88,6 @@ func TestRouteKey(t *testing.T) {
 }
 
 func TestRoutesMatch(t *testing.T) {
-
 	type test struct {
 		pattern string
 		path    string
@@ -122,97 +115,37 @@ func TestRoutesMatch(t *testing.T) {
 			t.Errorf("Fail: %s <=> %s", test.pattern, test.path)
 		}
 	}
-
 }
 
-func TestRoutesParam(t *testing.T) {
+func TestRouteParams(t *testing.T) {
 	type test struct {
 		pattern string
 		path    string
-		param   string
+		name    string
+		value   string
 	}
 
 	tests := []test{
-		test{"/foo/:parentKey/bar/key", "/foo/123/bar/456", "123"},
-		test{"/bar/parentKey/foo/:key", "/foo/123/bar/456", "456"},
-		test{"/foo/:parentKey", "/foo/123", "123"},
-		test{"/foo/:parentKey/", "/foo/123", "123"},
-		test{"/foo/:parentKey//", "/foo/123", "123"},
-		test{"/:param", "/123", "123"},
-		test{"/", "/", ""},
-		test{"/", "", ""},
-		test{"/:foo", "", ""}, // blank param
-		test{"/foo/:parentKey/bar/", "/foo/123", ""},
-		test{"/", "/foo", ""},
+		test{"/foo/:parentKey/bar/:key", "/foo/123/bar/456", "parentKey", "123"},
+		test{"/foo/:parentKey/bar/:key", "/foo/123/bar/456", "key", "456"},
+		test{"/foo/:parentKey", "/foo/123", "parentKey", "123"},
+		test{"/foo/:parentKey/", "/foo/123", "parentKey", "123"},
+		test{"/foo/:parentKey//", "/foo/123", "parentKey", "123"},
+		test{"/:param", "/123", "param", "123"},
+		test{"/", "/", "", ""},
+		test{"/", "", "", ""},
+		test{"/:foo", "", "", ""}, // blank param
 	}
 
 	for _, test := range tests {
 		url, _ := url.Parse(test.path)
 		r := Route{URL: url}
-		if test.param != r.Param(test.pattern) {
+		if !r.Matches(test.pattern) {
+			t.Error("route failed to match")
+			continue
+		}
+		if test.value != r.Get(test.name) {
 			t.Errorf("Fail: %s <=> %s", test.pattern, test.path)
 		}
 	}
-}
-
-func TestRoutesParams(t *testing.T) {
-
-	type test struct {
-		pattern string
-		path    string
-		args    map[string]string
-		err     error
-	}
-
-	tests := []test{
-		test{
-			pattern: "/foo/:parentKey/bar/:key",
-			path:    "/foo/123/bar/456",
-			args: map[string]string{
-				"parentKey": "123",
-				"key":       "456",
-			},
-			err: nil,
-		},
-		test{
-			pattern: "/foo/:parentKey/bar/:key",
-			path:    "/foo//bar/456",
-			args: map[string]string{
-				"parentKey": "",
-				"key":       "456",
-			},
-			err: nil,
-		},
-
-		test{
-			pattern: "/foo/:parentKey/bar/:key",
-			path:    "/foo/123/bar/",
-			err:     ErrNoMatch,
-		},
-		test{
-			pattern: "/foo/:parentKey/bar",
-			path:    "/foo/123/bar/456",
-			err:     ErrNoMatch,
-		},
-		test{
-			pattern: "/foo/:parentKey/bar/",
-			path:    "/foo/123/bar/456",
-			err:     ErrNoMatch,
-		},
-	}
-
-	for _, test := range tests {
-		url, _ := url.Parse(test.path)
-		r := Route{URL: url}
-		args, err := r.Params(test.pattern)
-		if err != test.err {
-			t.Errorf("Fail: %v => %v", err, test.err)
-			continue
-		}
-
-		if !reflect.DeepEqual(args, test.args) {
-			t.Errorf("Fail: %s => %v", test.pattern, args)
-		}
-	}
-
 }
