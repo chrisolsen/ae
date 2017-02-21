@@ -63,3 +63,7 @@ func ToErrorList(in interface{}) interface{} {
 	out := fmt.Sprintf(`<ul class="errors">%s</ul>`, strings.Join(lis, "\n"))
 	return template.HTML(out)
 }
+
+func SafeCSS(s string) template.CSS {
+	return template.CSS(s)
+}
