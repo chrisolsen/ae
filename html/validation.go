@@ -41,7 +41,7 @@ func (e Errors) Error() error {
 //  <form ...>
 //      {{ .Error | error }}
 //  </form>
-func ToErrorList(in interface{}) interface{} {
+func ToErrorList(in interface{}) template.HTML {
 	var list []string
 
 	switch in.(type) {
