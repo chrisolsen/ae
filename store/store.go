@@ -41,12 +41,11 @@ func (b Base) Update(c context.Context, key *datastore.Key, data interface{}) er
 func (b Base) Get(c context.Context, key *datastore.Key, dst interface{}) (*datastore.Key, error) {
 	encodedKey := key.Encode()
 	_, err := memcache.Gob.Get(c, encodedKey, dst)
-	if err != nil {
-		if err != memcache.ErrCacheMiss {
-			return nil, fmt.Errorf("memcache get: %v", err)
-		}
-	} else {
+	if err == nil {
 		return key, nil
+	}
+	if err != memcache.ErrCacheMiss {
+		return nil, fmt.Errorf("memcache get: %v", err)
 	}
 
 	err = datastore.Get(c, key, dst)
