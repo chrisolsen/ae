@@ -150,9 +150,12 @@ func (m *Middleware) AuthenticateToken(c context.Context, w http.ResponseWriter,
 func (m *Middleware) getToken(c context.Context, rawToken string) (*Token, error) {
 	var err error
 	var token Token
-	_, err = memcache.Gob.Get(c, rawToken, &token)
+	item, err := memcache.Gob.Get(c, rawToken, nil)
 	if err == nil {
-		return &token, nil
+		switch item.Object.(type) {
+		case *Token:
+			return item.Object.(*Token), nil
+		}
 	}
 	if err != memcache.ErrCacheMiss {
 		return nil, fmt.Errorf("failed to get token from memcache: %v", err)
