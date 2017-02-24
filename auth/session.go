@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 
 	"golang.org/x/net/context"
@@ -9,6 +10,11 @@ import (
 
 var (
 	sessionKey = contextKey("session-key")
+)
+
+var (
+	ErrMissingToken  = errors.New("no auth token found")
+	ErrNoSuchAccount = errors.New("failed to find account")
 )
 
 // Session provides helper methods to get and set the account key within the request context
@@ -24,6 +30,12 @@ func (s *Session) Account(c context.Context) (*Account, error) {
 	store := NewAccountStore()
 	var account Account
 	account.Key, err = store.Get(c, key, &account)
+	if err == datastore.ErrNoSuchEntity {
+		return nil, ErrNoSuchAccount
+	}
+	if err != nil {
+		return nil, err
+	}
 	return &account, err
 }
 
@@ -41,7 +53,7 @@ func (s *Session) AccountKey(c context.Context) (*datastore.Key, error) {
 	var err error
 	val := c.Value(sessionKey)
 	if val == nil {
-		return nil, fmt.Errorf("missing context account key: %v", err)
+		return nil, ErrMissingToken
 	}
 
 	key, err := datastore.DecodeKey(val.(string))
