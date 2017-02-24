@@ -9,7 +9,6 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
-	"google.golang.org/appengine/memcache"
 )
 
 const (
@@ -150,18 +149,7 @@ func (m *Middleware) AuthenticateToken(c context.Context, w http.ResponseWriter,
 func (m *Middleware) getToken(c context.Context, rawToken string) (*Token, error) {
 	var err error
 	var token Token
-	item, err := memcache.Gob.Get(c, rawToken, nil)
-	if err == nil {
-		switch item.Object.(type) {
-		case *Token:
-			return item.Object.(*Token), nil
-		}
-	}
-	if err != memcache.ErrCacheMiss {
-		return nil, fmt.Errorf("failed to get token from memcache: %v", err)
-	}
 
-	// not in memcache
 	tokenKey, err := datastore.DecodeKey(rawToken)
 	if err != nil {
 		return nil, fmt.Errorf("decoding token key: %v", err)
@@ -173,12 +161,6 @@ func (m *Middleware) getToken(c context.Context, rawToken string) (*Token, error
 		return nil, fmt.Errorf("failed to get token from store: %v", err)
 	}
 
-	// add the token to memcache
-	memcache.Gob.Set(c, &memcache.Item{
-		Key:        token.Value(),
-		Object:     token,
-		Expiration: -1 * time.Since(token.Expiry),
-	})
 	return &token, nil
 }
 
