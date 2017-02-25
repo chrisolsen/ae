@@ -48,10 +48,6 @@ func (s *AccountStore) Create(c context.Context, creds *Credentials, account *Ac
 	var accountKey *datastore.Key
 	var cStore = NewCredentialStore()
 	err = datastore.RunInTransaction(c, func(tc context.Context) error {
-		creds.Password, err = encrypt(creds.Password)
-		if err != nil {
-			return fmt.Errorf("failed to encrypt password: %v", err)
-		}
 		accountKey, err = s.Base.Create(tc, account, nil)
 		if err != nil {
 			return fmt.Errorf("failed to create account: %v", err)

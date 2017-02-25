@@ -56,10 +56,13 @@ func (s *CredentialStore) Create(c context.Context, creds *Credentials, accountK
 		return nil, errors.New("Invalid credentials")
 	}
 
+	var isProvider = len(creds.ProviderID) > 0
+
+	// already exists?
 	q := datastore.NewQuery(s.TableName)
 	q.Ancestor(accountKey)
 	q.KeysOnly()
-	if len(creds.ProviderID) > 0 {
+	if isProvider {
 		q.Filter("ProviderID =", creds.ProviderID)
 		q.Filter("ProviderName =", creds.ProviderName)
 	} else {
@@ -73,6 +76,14 @@ func (s *CredentialStore) Create(c context.Context, creds *Credentials, accountK
 	}
 	if len(keys) > 0 {
 		return nil, errors.New("account credentials already exists")
+	}
+
+	if !isProvider {
+		// encrypt password
+		creds.Password, err = encrypt(creds.Password)
+		if err != nil {
+			return nil, fmt.Errorf("failed to encrypt password: %v", err)
+		}
 	}
 
 	return s.Base.Create(c, creds, accountKey)
