@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"strings"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/chrisolsen/ae/uuid"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/urlfetch"
 )
@@ -39,7 +39,7 @@ type Storer interface {
 
 // CreateWithData saves the passed in data as an attachment
 func (as Store) CreateWithData(c context.Context, data []byte, contentType string) (*File, error) {
-	name := uuid.NewV4().String()
+	name := uuid.New()
 
 	// save image
 	writer, err := NewWriter(c, name, contentType)
