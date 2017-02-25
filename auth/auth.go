@@ -15,21 +15,19 @@ import (
 
 // GetToken returns the *Token value for the raw token value contained within the auth cookie or auth header
 func GetToken(c context.Context, r *http.Request) (*Token, error) {
-	key, err := getTokenKeyFromCookie(r)
+	uuid, err := getTokenKeyFromCookie(r)
 	if err != nil && err != http.ErrNoCookie {
 		return nil, err
 	}
 	if err == http.ErrNoCookie {
-		key, err = getTokenKeyFromHeader(r)
+		uuid = getTokenKeyFromHeader(r)
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	tstore := NewTokenStore()
-	var token Token
-	token.Key, err = tstore.Get(c, key, &token)
-	return &token, err
+	return tstore.Get(c, uuid)
 }
 
 // Signup creates a user account and links up the credentials. Based on the request type an auth cookie
@@ -45,9 +43,9 @@ func Signup(c context.Context, w http.ResponseWriter, r *http.Request, creds *Cr
 	token, err := tstore.Create(c, accountKey)
 
 	if accepts(r, "json") {
-		setHeaderToken(w, token.Key)
+		setHeaderToken(w, token.UUID)
 	} else {
-		setAuthCookieToken(w, token.Key)
+		setAuthCookieToken(w, token.UUID)
 	}
 
 	return nil
@@ -57,23 +55,28 @@ func Signup(c context.Context, w http.ResponseWriter, r *http.Request, creds *Cr
 // in the database to ensure it is no longer usable
 func Signout(c context.Context, w http.ResponseWriter, r *http.Request) error {
 	var err error
-	var key *datastore.Key
+	var uuid string
 
 	if accepts(r, "json") {
-		key, err = getTokenKeyFromHeader(r)
+		uuid = getTokenKeyFromHeader(r)
 		if err != nil {
 			return fmt.Errorf("failed to get token from header: %v", err)
 		}
 		clearHeader(w)
-		err = datastore.Delete(c, key)
 	} else {
-		key, err = getTokenKeyFromCookie(r)
+		uuid, err = getTokenKeyFromCookie(r)
 		if err != nil {
 			return fmt.Errorf("failed to get token from cookie: %v", err)
 		}
 		clearCookie(w)
-		err = datastore.Delete(c, key)
 	}
+
+	store := NewTokenStore()
+	token, err := store.Get(c, uuid)
+	if err != nil {
+		return err
+	}
+	err = datastore.Delete(c, token.Key)
 
 	return err
 }
@@ -92,9 +95,9 @@ func Authorize(c context.Context, w http.ResponseWriter, r *http.Request, creds 
 	}
 
 	if accepts(r, "json") {
-		setHeaderToken(w, token.Key)
+		setHeaderToken(w, token.UUID)
 	} else {
-		setAuthCookieToken(w, token.Key)
+		setAuthCookieToken(w, token.UUID)
 	}
 
 	return token, nil
@@ -156,43 +159,32 @@ func clearCookie(w http.ResponseWriter) {
 	})
 }
 
-func setAuthCookieToken(w http.ResponseWriter, token *datastore.Key) {
+func setAuthCookieToken(w http.ResponseWriter, uuid string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     cookieName,
 		Path:     "/",
 		Expires:  time.Now().Add(time.Hour * 24 * 14),
 		HttpOnly: true,
 		Secure:   !appengine.IsDevAppServer(),
-		Value:    token.Encode(),
+		Value:    uuid,
 	})
 }
 
-func setHeaderToken(w http.ResponseWriter, tokenKey *datastore.Key) {
-	w.Header().Set("Authorization", tokenKey.Encode())
+func setHeaderToken(w http.ResponseWriter, uuid string) {
+	w.Header().Set("Authorization", uuid)
 }
 
-func getTokenKeyFromHeader(r *http.Request) (*datastore.Key, error) {
-	h := r.Header.Get("Authorization")
-	tokenKey, err := datastore.DecodeKey(h[len("token="):])
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode token key: %v", err)
-	}
-
-	return tokenKey, nil
+func getTokenKeyFromHeader(r *http.Request) string {
+	return r.Header.Get("Authorization")[len("token="):]
 }
 
-func getTokenKeyFromCookie(r *http.Request) (*datastore.Key, error) {
+func getTokenKeyFromCookie(r *http.Request) (string, error) {
 	cookie, err := r.Cookie(cookieName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get current cookie: %v", err)
+		return "", fmt.Errorf("failed to get current cookie: %v", err)
 	}
 
-	tokenKey, err := datastore.DecodeKey(cookie.Value)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode token key: %v", err)
-	}
-
-	return tokenKey, nil
+	return cookie.Value, nil
 }
 
 func clearHeader(w http.ResponseWriter) {

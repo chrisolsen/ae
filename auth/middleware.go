@@ -68,7 +68,7 @@ func (m *Middleware) AuthenticateCookie(c context.Context, w http.ResponseWriter
 				Expires:  time.Now().Add(time.Hour * 24 * 14),
 				HttpOnly: true,
 				Secure:   !appengine.IsDevAppServer(),
-				Value:    newToken.Value(),
+				Value:    newToken.UUID,
 			})
 		}
 
@@ -127,7 +127,7 @@ func (m *Middleware) AuthenticateToken(c context.Context, w http.ResponseWriter,
 			}
 
 			// send back the new token values
-			w.Header().Add(newTokenHeader, newToken.Value())
+			w.Header().Add(newTokenHeader, newToken.UUID)
 			w.Header().Add(newTokenExpiryHeader, newToken.Expiry.Format(time.RFC3339))
 		}
 
@@ -146,22 +146,13 @@ func (m *Middleware) AuthenticateToken(c context.Context, w http.ResponseWriter,
 }
 
 // Gets the token for the rawToken value
-func (m *Middleware) getToken(c context.Context, rawToken string) (*Token, error) {
-	var err error
-	var token Token
-
-	tokenKey, err := datastore.DecodeKey(rawToken)
-	if err != nil {
-		return nil, fmt.Errorf("decoding token key: %v", err)
-	}
-
+func (m *Middleware) getToken(c context.Context, uuid string) (*Token, error) {
 	var store = NewTokenStore()
-	token.Key, err = store.Get(c, tokenKey, &token)
+	token, err := store.Get(c, uuid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token from store: %v", err)
 	}
-
-	return &token, nil
+	return token, nil
 }
 
 // Creates a new token and links it to the account for the old token
