@@ -182,8 +182,8 @@ func getUUIDFromHeader(r *http.Request) string {
 
 func getUUIDFromCookie(r *http.Request) (string, error) {
 	cookie, err := r.Cookie(cookieName)
-	if err != nil {
-		return "", fmt.Errorf("failed to get current cookie: %v", err)
+	if err != nil || len(cookie.Value) == 0 {
+		return "", ErrNoCookie
 	}
 
 	return cookie.Value, nil
