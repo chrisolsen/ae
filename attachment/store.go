@@ -39,7 +39,7 @@ type Storer interface {
 
 // CreateWithData saves the passed in data as an attachment
 func (as Store) CreateWithData(c context.Context, data []byte, contentType string) (*File, error) {
-	name := uuid.New()
+	name := uuid.Random()
 
 	// save image
 	writer, err := NewWriter(c, name, contentType)

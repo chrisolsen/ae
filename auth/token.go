@@ -93,7 +93,7 @@ func (s *TokenStore) Get(c context.Context, UUID string) (*Token, error) {
 // Create overrides base method since token creation doesn't need any data
 // other than the account key
 func (s *TokenStore) Create(c context.Context, accountKey *datastore.Key) (*Token, error) {
-	token := Token{UUID: uuid.New()}
+	token := Token{UUID: uuid.Random()}
 	_, err := s.Base.Create(c, &token, accountKey)
 	return &token, err
 }

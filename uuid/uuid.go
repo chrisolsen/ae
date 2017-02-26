@@ -1,11 +1,11 @@
 package uuid
 
-import suuid "github.com/satori/go.uuid"
+import gouuid "github.com/satori/go.uuid"
 
-// This package only exists becase AppEngine is barfs all over the fuckin' place if
+// This package only exists because AppEngine fails to compile if
 // the same lib is vendored in multiple packages and used within an app.
 
-// New returns random generated UUID.
-func New() string {
-	return suuid.NewV4().String()
+// Random returns random generated UUID.
+func Random() string {
+	return gouuid.NewV4().String()
 }
