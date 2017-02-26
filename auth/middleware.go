@@ -163,6 +163,6 @@ func (m *Middleware) getNewToken(c context.Context, oldToken *Token) (*Token, er
 		return nil, err
 	}
 
-	store.Delete(c, oldToken.Key)
+	store.Delete(c, oldToken.UUID)
 	return newToken, nil
 }

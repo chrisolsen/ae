@@ -13,14 +13,16 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
+var ErrNoCookie = errors.New("no cookie found")
+
 // GetToken returns the *Token value for the raw token value contained within the auth cookie or auth header
 func GetToken(c context.Context, r *http.Request) (*Token, error) {
-	uuid, err := getTokenKeyFromCookie(r)
+	uuid, err := getUUIDFromCookie(r)
 	if err != nil && err != http.ErrNoCookie {
 		return nil, err
 	}
 	if err == http.ErrNoCookie {
-		uuid = getTokenKeyFromHeader(r)
+		uuid = getUUIDFromHeader(r)
 	}
 	if err != nil {
 		return nil, err
@@ -58,13 +60,13 @@ func Signout(c context.Context, w http.ResponseWriter, r *http.Request) error {
 	var uuid string
 
 	if accepts(r, "json") {
-		uuid = getTokenKeyFromHeader(r)
+		uuid = getUUIDFromHeader(r)
 		if err != nil {
 			return fmt.Errorf("failed to get token from header: %v", err)
 		}
 		clearHeader(w)
 	} else {
-		uuid, err = getTokenKeyFromCookie(r)
+		uuid, err = getUUIDFromCookie(r)
 		if err != nil {
 			return fmt.Errorf("failed to get token from cookie: %v", err)
 		}
@@ -174,11 +176,11 @@ func setHeaderToken(w http.ResponseWriter, uuid string) {
 	w.Header().Set("Authorization", uuid)
 }
 
-func getTokenKeyFromHeader(r *http.Request) string {
+func getUUIDFromHeader(r *http.Request) string {
 	return r.Header.Get("Authorization")[len("token="):]
 }
 
-func getTokenKeyFromCookie(r *http.Request) (string, error) {
+func getUUIDFromCookie(r *http.Request) (string, error) {
 	cookie, err := r.Cookie(cookieName)
 	if err != nil {
 		return "", fmt.Errorf("failed to get current cookie: %v", err)
