@@ -97,3 +97,11 @@ func (s *TokenStore) Create(c context.Context, accountKey *datastore.Key) (*Toke
 	_, err := s.Base.Create(c, &token, accountKey)
 	return &token, err
 }
+
+func (s *TokenStore) Delete(c context.Context, uuid string) error {
+	token, err := s.Get(c, uuid)
+	if err != nil {
+		return err
+	}
+	return s.Base.Delete(c, token.Key)
+}
