@@ -1,12 +1,20 @@
 package html
 
-import "errors"
+import (
+	"errors"
+	"net/http"
+
+	"github.com/chrisolsen/ae/auth"
+)
 
 type page map[string]interface{}
 
 // NewPage creates a new page
-func NewPage() page {
-	return page(make(map[string]interface{}))
+func NewPage(r *http.Request) page {
+	p := page(make(map[string]interface{}))
+	token := auth.NewCSRFToken(r)
+	p["CSRFToken"] = token
+	return p
 }
 
 // SetError sets any error that needs to be shown
