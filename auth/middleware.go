@@ -13,7 +13,7 @@ import (
 
 const (
 	tokensTable = "tokens"
-	cookieName  = "app-cookie"
+	cookieName  = "token"
 )
 
 // Token keys
