@@ -3,12 +3,6 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "6fDEVu0GHmuY4tLNHCk7lBPmatk=",
-			"path": "github.com/gorilla/schema",
-			"revision": "64644a2fced21dbfa12f7ca184bdcedeb2513dd4",
-			"revisionTime": "2017-02-24T19:38:40Z"
-		},
-		{
 			"checksumSHA1": "vE43s37+4CJ2CDU6TlOUOYE0K9c=",
 			"path": "golang.org/x/crypto/bcrypt",
 			"revision": "dc137beb6cce2043eb6b5f223ab8bf51c32459f4",
