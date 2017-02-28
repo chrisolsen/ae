@@ -117,3 +117,28 @@ func (s *CredentialStore) GetByUsername(c context.Context, username string, dst 
 func (s *CredentialStore) GetByAccount(c context.Context, accountKey *datastore.Key, dst interface{}) ([]*datastore.Key, error) {
 	return datastore.NewQuery(s.TableName).Ancestor(accountKey).GetAll(c, dst)
 }
+
+func (s CredentialStore) UpdatePassword(c context.Context, accountKey *datastore.Key, password string) error {
+	var creds []*Credentials
+	keys, err := datastore.NewQuery(s.TableName).
+		Ancestor(accountKey).
+		Filter("ProviderID =", "").
+		GetAll(c, &creds)
+
+	if err != nil {
+		return err
+	}
+	if len(keys) == 0 {
+		return errors.New("no credentials found")
+	}
+	if len(keys) > 1 {
+		return errors.New("more than one credential found")
+	}
+
+	key, cred := keys[0], creds[0]
+	cred.Password, err = encrypt(password)
+	if err != nil {
+		return errors.New("failed to encrypt password")
+	}
+	return s.Update(c, key, cred)
+}
