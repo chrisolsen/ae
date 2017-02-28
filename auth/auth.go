@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"net/url"
+
 	"github.com/chrisolsen/fbgraphapi"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -195,4 +197,29 @@ func clearHeader(w http.ResponseWriter) {
 
 func accepts(r *http.Request, t string) bool {
 	return strings.Index(r.Header.Get("Accept"), t) > 0
+}
+
+// VerifyReferrer middlware validates the referer header matches the request url's host
+func VerifyReferrer(c context.Context, w http.ResponseWriter, r *http.Request) context.Context {
+	if r.Method != http.MethodPost {
+		return c
+	}
+
+	err := func() error {
+		referrer, err := url.Parse(r.Header.Get("Referer"))
+		if err != nil {
+			return err
+		}
+		if referrer.Host != r.Host {
+			return fmt.Errorf("BLOCKED: VerifyReferrer: %v - %v", referrer, r.Host)
+		}
+		return nil
+	}()
+
+	if err != nil {
+		cc, cancel := context.WithCancel(c)
+		cancel()
+		return cc
+	}
+	return c
 }
