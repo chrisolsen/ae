@@ -10,8 +10,13 @@ import (
 type page map[string]interface{}
 
 // NewPage creates a new page
-func NewPage(r *http.Request) page {
-	p := page(make(map[string]interface{}))
+func NewPage() page {
+	return page(make(map[string]interface{}))
+}
+
+// NewPageWithCSRFToken create a page with an initialized CSRF token
+func NewPageWithCSRFToken(r *http.Request) page {
+	p := NewPage()
 	token := auth.NewCSRFToken(r)
 	p["CSRFToken"] = token
 	return p
