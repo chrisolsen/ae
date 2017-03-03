@@ -18,9 +18,9 @@ type Handler struct {
 
 func (h Handler) ServeHTTP(c context.Context, w http.ResponseWriter, r *http.Request) {
 	h.Bind(c, w, r)
-	route := route.New(r.URL)
+	route := route.New(r)
 	switch {
-	case route.Matches("/images/:name"):
+	case route.Matches("GET", "/images/:name"):
 		h.fetch(route.Get("name"))
 	default:
 		h.Abort(http.StatusNotFound, nil)

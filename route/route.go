@@ -2,7 +2,7 @@ package route
 
 import (
 	"errors"
-	"net/url"
+	"net/http"
 	"strings"
 
 	"google.golang.org/appengine/datastore"
@@ -16,14 +16,14 @@ var (
 // Route type is a simple wrapper around the public methods to eliminate the need of passing
 // the url to each of the methods.
 type Route struct {
-	URL    *url.URL
+	req    *http.Request
 	params map[string]string
 	parts  map[string]bool
 }
 
 // New creates a route
-func New(url *url.URL) Route {
-	return Route{URL: url}
+func New(r *http.Request) Route {
+	return Route{req: r}
 }
 
 // Matches checks if the request url matches the passed in pattern. Patterns need to
@@ -31,12 +31,17 @@ func New(url *url.URL) Route {
 // ex.
 //  /foo/:var/bar
 // This method does not validate pattern argument data formats.
-func (r *Route) Matches(pattern string) bool {
-	if strings.Index(pattern, ":") == -1 {
-		return strings.Trim(r.URL.Path, "/") == strings.Trim(pattern, "/")
+func (r *Route) Matches(method, pattern string) bool {
+	if r.req.Method != strings.ToUpper(method) {
+		return false
 	}
 
-	pathParts, patternParts := slice(r.URL.Path), slice(pattern)
+	url := r.req.URL
+	if strings.Index(pattern, ":") == -1 {
+		return strings.Trim(url.Path, "/") == strings.Trim(pattern, "/")
+	}
+
+	pathParts, patternParts := slice(url.Path), slice(pattern)
 	patternPartCount, pathPartCount := len(patternParts), len(pathParts)
 	if pathPartCount != patternPartCount {
 		return false
@@ -82,7 +87,7 @@ func (r *Route) Get(name string) string {
 
 // Contains indicates if the named param exists within the url
 func (r *Route) Contains(val string) bool {
-	return strings.Contains(r.URL.Path, val)
+	return strings.Contains(r.req.URL.Path, val)
 }
 
 // Key wraps the public Key() method
