@@ -8,61 +8,23 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-// TagType defines how the tag is created
-type TagType int
-
 const tableName = "tags"
-
-// Tags are either custom keys created by the user or auto created
-const (
-	Custom TagType = iota
-	Auto
-)
 
 // Tag allows better searching capabilities with AppEngine's Datastore
 type Tag struct {
 	model.Base
 	Value string
-	Type  TagType
-}
-
-// Generate auto-creates tags for the val passed in with values longer the the minSize
-// ex. (apple, 3) => app, appl, apple
-// ex. (foo bario, 3) => foo, bar, bari, bario
-func Generate(val string, minSize int) []string {
-	tags := make(map[string]bool)
-	words := strings.Split(val, " ")
-	for _, word := range words {
-		lc := len(word)
-		if lc <= minSize {
-			if _, exists := tags[word]; !exists {
-				tags[strings.ToLower(word)] = true
-			}
-			continue
-		}
-		for i := minSize; i <= lc; i++ {
-			if _, exists := tags[word]; !exists {
-				tags[strings.ToLower(word[:i])] = true
-			}
-		}
-	}
-	tarr := make([]string, len(tags))
-	i := 0
-	for tag := range tags {
-		tarr[i] = tag
-		i++
-	}
-	return tarr
+	Type  string
 }
 
 // Save saves the tag items with the parent relation
-func Save(c context.Context, rawTags []string, tagType TagType, tagTableName string, parentKey *datastore.Key) (int, int, error) {
+func Save(c context.Context, rawTags []string, tagType string, parentKey *datastore.Key) (int, int, error) {
 	var delCount int
 	var addCount int
 
 	// get existing
 	var existingTags []*Tag
-	oldKeys, err := datastore.NewQuery(tagTableName).
+	oldKeys, err := datastore.NewQuery(tableName).
 		Ancestor(parentKey).
 		Filter("Type =", tagType).
 		Order("Value").
@@ -79,6 +41,7 @@ func Save(c context.Context, rawTags []string, tagType TagType, tagTableName str
 	for _, tag := range rawTags {
 		newTagMap[tag] = true
 	}
+
 	rmTagKeys := getTagsToRemove(existingTags, newTagMap)
 	err = datastore.DeleteMulti(c, rmTagKeys)
 	if err != nil {
@@ -94,7 +57,7 @@ func Save(c context.Context, rawTags []string, tagType TagType, tagTableName str
 	newTags := getTagsToAdd(rawTags, existingTagMap)
 	for _, t := range newTags {
 		tg := &Tag{Value: strings.ToLower(t), Type: tagType}
-		ky := datastore.NewIncompleteKey(c, tagTableName, parentKey)
+		ky := datastore.NewIncompleteKey(c, tableName, parentKey)
 		_, err = datastore.Put(c, ky, tg)
 		if err != nil {
 			return 0, 0, err
