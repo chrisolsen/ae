@@ -13,12 +13,13 @@ const tableName = "tags"
 // Tag allows better searching capabilities with AppEngine's Datastore
 type Tag struct {
 	model.Base
-	Value string
-	Type  string
+	Value  string
+	Type   string
+	Public bool
 }
 
 // Save saves the tag items with the parent relation
-func Save(c context.Context, rawTags []string, tagType string, parentKey *datastore.Key) (int, int, error) {
+func Save(c context.Context, rawTags []string, tagType string, public bool, parentKey *datastore.Key) (int, int, error) {
 	var delCount int
 	var addCount int
 
@@ -27,6 +28,7 @@ func Save(c context.Context, rawTags []string, tagType string, parentKey *datast
 	oldKeys, err := datastore.NewQuery(tableName).
 		Ancestor(parentKey).
 		Filter("Type =", tagType).
+		Filter("Public =", public).
 		Order("Value").
 		GetAll(c, &existingTags)
 	if err != nil {
@@ -39,7 +41,7 @@ func Save(c context.Context, rawTags []string, tagType string, parentKey *datast
 	// delete old tags
 	newTagMap := make(map[string]bool)
 	for _, tag := range rawTags {
-		newTagMap[tag] = true
+		newTagMap[strings.ToLower(tag)] = true
 	}
 
 	rmTagKeys := getTagsToRemove(existingTags, newTagMap)
@@ -56,7 +58,7 @@ func Save(c context.Context, rawTags []string, tagType string, parentKey *datast
 	}
 	newTags := getTagsToAdd(rawTags, existingTagMap)
 	for _, t := range newTags {
-		tg := &Tag{Value: strings.ToLower(t), Type: tagType}
+		tg := &Tag{Value: strings.ToLower(t), Type: tagType, Public: public}
 		ky := datastore.NewIncompleteKey(c, tableName, parentKey)
 		_, err = datastore.Put(c, ky, tg)
 		if err != nil {
@@ -68,9 +70,20 @@ func Save(c context.Context, rawTags []string, tagType string, parentKey *datast
 }
 
 // FindKeysByTag returns a list of all the tag's parent datastore keys
-func FindKeysByTag(c context.Context, tag, tagTableName string) ([]*datastore.Key, error) {
+func FindKeysByTag(c context.Context, tag, tagType string, parentKey *datastore.Key, offset, limit int) ([]*datastore.Key, error) {
 	filter := strings.ToLower(tag)
-	keys, err := datastore.NewQuery(tagTableName).Filter("Value =", filter).KeysOnly().GetAll(c, nil)
+	q := datastore.NewQuery(tableName)
+	if parentKey != nil {
+		q = q.Ancestor(parentKey)
+	}
+	keys, err := q.
+		Filter("Type =", tagType).
+		Filter("Value =", filter).
+		Offset(offset).
+		Limit(limit).
+		KeysOnly().
+		GetAll(c, nil)
+
 	if err != nil {
 		return nil, err
 	}
@@ -94,8 +107,9 @@ func getTagsToRemove(currentTags []*Tag, newTags map[string]bool) []*datastore.K
 func getTagsToAdd(rawTags []string, existingTags map[string]bool) []string {
 	var list []string
 	for _, t := range rawTags {
-		if _, ok := existingTags[strings.ToLower(t)]; !ok {
-			list = append(list, t)
+		lt := strings.ToLower(t)
+		if _, ok := existingTags[lt]; !ok {
+			list = append(list, lt)
 		}
 	}
 	return list
