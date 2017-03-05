@@ -24,3 +24,8 @@ func Markdown(input string) interface{} {
 	out := string(blackfriday.MarkdownCommon([]byte(input)))
 	return template.HTML(out)
 }
+
+// Add adds the numbers
+func Add(a, b int) int {
+	return a + b
+}
