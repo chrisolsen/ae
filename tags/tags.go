@@ -29,7 +29,6 @@ func Save(c context.Context, rawTags []string, tagType string, public bool, pare
 		Ancestor(parentKey).
 		Filter("Type =", tagType).
 		Filter("Public =", public).
-		Order("Value").
 		GetAll(c, &existingTags)
 	if err != nil {
 		return 0, 0, err
