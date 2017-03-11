@@ -3,13 +3,16 @@ package handler
 // Contains common methods used for writing appengine apps.
 
 import (
+	"crypto/md5"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
 	"net/url"
-
 	"strings"
+	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
@@ -218,6 +221,39 @@ func (b *Base) Redirect(url string, perm bool) {
 func (b *Base) Render(template string, data interface{}, fns template.FuncMap) {
 	tmpl := b.loadTemplate(template, fns)
 	tmpl.ExecuteTemplate(b.Res, b.config.ParentLayoutName, data)
+}
+
+// SetLastModified sets the Last-Modified header in the RFC1123 time format
+func (b *Base) SetLastModified(t time.Time) {
+	b.Res.Header().Set("Last-Modified", t.Format(time.RFC1123))
+}
+
+// SetETag sets the etag with the md5 value
+func (b *Base) SetETag(val interface{}) {
+	var str string
+	switch val.(type) {
+	case string:
+		str = val.(string)
+	case time.Time:
+		str = val.(time.Time).Format(time.RFC1123)
+	case fmt.Stringer:
+		str = val.(fmt.Stringer).String()
+	default:
+		str = fmt.Sprintf("%v", val)
+	}
+
+	h := md5.New()
+	io.WriteString(h, str)
+	etag := base64.StdEncoding.EncodeToString(h.Sum(nil))
+	b.Res.Header().Set("ETag", etag)
+}
+
+func (b *Base) SetExpires(t time.Time) {
+	b.Res.Header().Set("Expires", t.Format(time.RFC1123))
+}
+
+func (b *Base) SetExpiresIn(d time.Duration) {
+	b.Res.Header().Set("Expires", time.Now().Add(d).Format(time.RFC1123))
 }
 
 func (b *Base) loadTemplate(name string, fns template.FuncMap) *template.Template {
