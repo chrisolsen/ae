@@ -13,6 +13,11 @@ type Base struct {
 	TableName string
 }
 
+// New is a helper to create a base store
+func New(tableName string) Base {
+	return Base{TableName: tableName}
+}
+
 // Delete deletes the record and clears the memcached record
 func (b Base) Delete(c context.Context, key *datastore.Key) error {
 	err := datastore.Delete(c, key)
