@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -51,13 +52,15 @@ type Base struct {
 
 // Config contains the custom handler configuration settings
 type Config struct {
+	DefaultLayout    string
 	LayoutPath       string
 	ViewPath         string
 	ParentLayoutName string
 }
 
 var defaultConfig = Config{
-	LayoutPath:       "layouts/application.html",
+	DefaultLayout:    "application.html",
+	LayoutPath:       "layouts",
 	ViewPath:         "views",
 	ParentLayoutName: "layout",
 }
@@ -214,9 +217,67 @@ func (b *Base) Redirect(str string, args ...interface{}) {
 }
 
 // Render pre-caches and renders template.
-func (b *Base) Render(template string, data interface{}, fns template.FuncMap) {
-	tmpl := b.loadTemplate(template, fns)
-	tmpl.ExecuteTemplate(b.Res, b.config.ParentLayoutName, data)
+func (b *Base) Render(path string, data interface{}, fns template.FuncMap) {
+	b.RenderTemplate(path, data, &RenderOptions{
+		Name:    b.config.ParentLayoutName,
+		FuncMap: fns,
+		Parents: []string{filepath.Join(b.config.LayoutPath, b.config.DefaultLayout)},
+	})
+}
+
+// RenderOptions contain the optional data items for rendering
+type RenderOptions struct {
+	// http status to return in the response
+	Status int
+
+	// template functions
+	FuncMap template.FuncMap
+
+	// parent layout paths to render the defined view within
+	Parents []string
+
+	// the defined *name* to render
+	// 	{{define "layout"}}...{{end}}
+	Name string
+}
+
+// RenderTemplate renders the template without any layout
+func (b *Base) RenderTemplate(tmplPath string, data interface{}, opts *RenderOptions) {
+	name := strings.TrimPrefix(tmplPath, "/")
+	tmpl := b.templates[name]
+	if tmpl == nil {
+		t := template.New(name)
+		if opts != nil && opts.FuncMap != nil {
+			t.Funcs(opts.FuncMap)
+		}
+		var views []string
+		if opts != nil && opts.Parents != nil {
+			for _, p := range opts.Parents {
+				views = append(views, b.fileNameWithExt(p))
+			}
+		} else {
+			views = make([]string, 0)
+		}
+
+		views = append(views, filepath.Join(b.config.ViewPath, b.fileNameWithExt(name)))
+		tmpl = template.Must(t.ParseFiles(views...))
+		b.templates[name] = tmpl
+	}
+	if opts != nil && opts.Status != 0 {
+		b.Res.WriteHeader(opts.Status)
+	} else {
+		b.Res.WriteHeader(http.StatusOK)
+	}
+
+	var renderErr error
+	if opts != nil && opts.Name != "" {
+		renderErr = tmpl.ExecuteTemplate(b.Res, opts.Name, data)
+	} else {
+		renderErr = tmpl.Execute(b.Res, data)
+	}
+	if renderErr != nil {
+		panic(renderErr)
+	}
 }
 
 // SetLastModified sets the Last-Modified header in the RFC1123 time format
@@ -252,21 +313,12 @@ func (b *Base) SetExpiresIn(d time.Duration) {
 	b.Res.Header().Set("Expires", time.Now().Add(d).Format(time.RFC1123))
 }
 
-func (b *Base) loadTemplate(name string, fns template.FuncMap) *template.Template {
-	if b.templates[name] != nil {
-		return b.templates[name]
+func (b *Base) fileNameWithExt(name string) string {
+	var ext string
+	if strings.Index(name, ".") > 0 {
+		ext = ""
+	} else {
+		ext = ".html"
 	}
-
-	view := fmt.Sprintf("%s/%s.html", b.config.ViewPath, name)
-	t := template.New(name)
-	if fns != nil {
-		t.Funcs(fns)
-	}
-	template, err := t.ParseFiles(b.config.LayoutPath, view)
-	if err != nil {
-		panic(fmt.Sprintf("Failed to load template: %s => %v", view, err))
-	}
-
-	b.templates[name] = template
-	return template
+	return fmt.Sprintf("%s%s", name, ext)
 }
