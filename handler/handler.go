@@ -209,12 +209,8 @@ func (b *Base) Abort(statusCode int, err error) {
 }
 
 // Redirect is a simple wrapper around the core http method
-func (b *Base) Redirect(url string, perm bool) {
-	status := 302
-	if perm {
-		status = http.StatusMovedPermanently
-	}
-	http.Redirect(b.Res, b.Req, url, status)
+func (b *Base) Redirect(str string, args ...interface{}) {
+	http.Redirect(b.Res, b.Req, fmt.Sprintf(str, args...), 303)
 }
 
 // Render pre-caches and renders template.
