@@ -46,8 +46,9 @@ type Base struct {
 	Req *http.Request
 	Res http.ResponseWriter
 
-	config    Config
-	templates map[string]*template.Template
+	config          Config
+	templates       map[string]*template.Template
+	templateHelpers map[string]interface{}
 }
 
 // Config contains the custom handler configuration settings
@@ -72,9 +73,6 @@ var defaultConfig = Config{
 //  	})}
 //  }
 func New(c *Config) Base {
-	if c == nil {
-		c = &defaultConfig
-	}
 	b := Base{config: *c} // copy the passed in pointer
 	b.templates = make(map[string]*template.Template)
 	return b
@@ -85,7 +83,27 @@ func New(c *Config) Base {
 //  	return rootHandler{Base: handler.Default()}
 //  }
 func Default() Base {
-	return New(nil)
+	return New(&defaultConfig)
+}
+
+// AddHelpers sets the html.template functions for the handler. This method should be
+// called once to intialize the handler with a set of common template helpers used
+// throughout the app.
+func (b *Base) AddHelpers(helpers map[string]interface{}) {
+	dup := make(map[string]interface{})
+	for k, v := range helpers {
+		dup[k] = v
+	}
+	b.templateHelpers = dup
+}
+
+// AddHelper allows one to add additional helpers to a handler. Use this when a handler
+// needs a less common helper.
+func (b *Base) AddHelper(name string, fn interface{}) {
+	if b.templateHelpers == nil {
+		b.templateHelpers = make(map[string]interface{})
+	}
+	b.templateHelpers[name] = fn
 }
 
 // OriginMiddleware returns a middleware function that validates the origin
@@ -217,10 +235,10 @@ func (b *Base) Redirect(str string, args ...interface{}) {
 }
 
 // Render pre-caches and renders template.
-func (b *Base) Render(path string, data interface{}, fns template.FuncMap) {
-	b.RenderTemplate(path, data, &RenderOptions{
+func (b *Base) Render(path string, data interface{}) {
+	b.RenderTemplate(path, data, RenderOptions{
 		Name:    b.config.ParentLayoutName,
-		FuncMap: fns,
+		FuncMap: b.templateHelpers,
 		Parents: []string{filepath.Join(b.config.LayoutPath, b.config.DefaultLayout)},
 	})
 }
