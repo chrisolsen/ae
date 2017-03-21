@@ -8,15 +8,15 @@ import (
 	"github.com/chrisolsen/ae/auth"
 )
 
-type page map[string]interface{}
+type Page map[string]interface{}
 
 // NewPage creates a new page
-func NewPage() page {
-	return page(make(map[string]interface{}))
+func NewPage() Page {
+	return Page(make(map[string]interface{}))
 }
 
 // NewPageWithCSRFToken create a page with an initialized CSRF token
-func NewPageWithCSRFToken(r *http.Request) page {
+func NewPageWithCSRFToken(r *http.Request) Page {
 	p := NewPage()
 	token := auth.NewCSRFToken(r)
 	p["CSRFToken"] = token
@@ -24,7 +24,7 @@ func NewPageWithCSRFToken(r *http.Request) page {
 }
 
 // SetError sets any error that needs to be shown
-func (p page) SetError(err interface{}) {
+func (p Page) SetError(err interface{}) {
 	switch err.(type) {
 	case string:
 		p["Error"] = errors.New(err.(string))
@@ -36,12 +36,12 @@ func (p page) SetError(err interface{}) {
 }
 
 // SetUser sets the current user
-func (p page) SetUser(user interface{}) {
+func (p Page) SetUser(user interface{}) {
 	p["CurrentUser"] = user
 }
 
 // Set sets the key and value
-func (p page) Set(key string, val interface{}) {
+func (p Page) Set(key string, val interface{}) {
 	p[key] = val
 }
 
@@ -56,7 +56,7 @@ func (p page) Set(key string, val interface{}) {
 //  {{range $index, $offset := .Offsets}}
 //      <a href="/name?o={{$offset}}">{{add $index 1}}</a>
 //  {{end}}
-func (p page) SetPageOffsets(itemCount, pageSize int) {
+func (p Page) SetPageOffsets(itemCount, pageSize int) {
 	offsetCount := int(math.Ceil(float64(itemCount) / float64(pageSize)))
 	offsets := make([]int, offsetCount)
 	for i := 0; i < offsetCount; i++ {
