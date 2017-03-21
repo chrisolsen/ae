@@ -323,10 +323,12 @@ func (b *Base) SetETag(val interface{}) {
 	b.Res.Header().Set("ETag", etag)
 }
 
+// SetExpires sets the Expires response header with a properly formatted time value
 func (b *Base) SetExpires(t time.Time) {
 	b.Res.Header().Set("Expires", t.Format(time.RFC1123))
 }
 
+// SetExpiresIn is a helper to simplify the calling of SetExpires
 func (b *Base) SetExpiresIn(d time.Duration) {
 	b.Res.Header().Set("Expires", time.Now().Add(d).Format(time.RFC1123))
 }
