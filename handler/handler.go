@@ -260,16 +260,16 @@ type RenderOptions struct {
 }
 
 // RenderTemplate renders the template without any layout
-func (b *Base) RenderTemplate(tmplPath string, data interface{}, opts *RenderOptions) {
+func (b *Base) RenderTemplate(tmplPath string, data interface{}, opts RenderOptions) {
 	name := strings.TrimPrefix(tmplPath, "/")
 	tmpl := b.templates[name]
 	if tmpl == nil {
 		t := template.New(name)
-		if opts != nil && opts.FuncMap != nil {
+		if opts.FuncMap != nil {
 			t.Funcs(opts.FuncMap)
 		}
 		var views []string
-		if opts != nil && opts.Parents != nil {
+		if opts.Parents != nil {
 			for _, p := range opts.Parents {
 				views = append(views, b.fileNameWithExt(p))
 			}
@@ -281,14 +281,14 @@ func (b *Base) RenderTemplate(tmplPath string, data interface{}, opts *RenderOpt
 		tmpl = template.Must(t.ParseFiles(views...))
 		b.templates[name] = tmpl
 	}
-	if opts != nil && opts.Status != 0 {
+	if opts.Status != 0 {
 		b.Res.WriteHeader(opts.Status)
 	} else {
 		b.Res.WriteHeader(http.StatusOK)
 	}
 
 	var renderErr error
-	if opts != nil && opts.Name != "" {
+	if opts.Name != "" {
 		renderErr = tmpl.ExecuteTemplate(b.Res, opts.Name, data)
 	} else {
 		renderErr = tmpl.Execute(b.Res, data)
