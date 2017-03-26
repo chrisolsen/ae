@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/chrisolsen/ae/flash"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
@@ -341,4 +342,15 @@ func (b *Base) fileNameWithExt(name string) string {
 		ext = ".html"
 	}
 	return fmt.Sprintf("%s%s", name, ext)
+}
+
+func (b *Base) SetFlash(msg string, args ...interface{}) {
+	if len(args) > 0 {
+		msg = fmt.Sprintf(msg, args...)
+	}
+	flash.Set(b.Res, msg)
+}
+
+func (b *Base) Flash() string {
+	return flash.Get(b.Res, b.Req)
 }
