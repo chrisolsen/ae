@@ -4,16 +4,15 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/chrisolsen/ae/model"
+	"github.com/chrisolsen/ae"
 	"github.com/chrisolsen/ae/store"
-
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 )
 
 // Credentials contain authentication details for various providers / methods
 type Credentials struct {
-	model.Base
+	ae.Model
 
 	// passed in on initial signup since looking up credentials by non-key cols
 	// may result in an empty dataset

@@ -3,7 +3,7 @@ package tags
 import (
 	"strings"
 
-	"github.com/chrisolsen/ae/model"
+	"github.com/chrisolsen/ae"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 )

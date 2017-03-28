@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/chrisolsen/ae"
 	"github.com/chrisolsen/ae/attachment"
-	"github.com/chrisolsen/ae/model"
 	"github.com/chrisolsen/ae/store"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
@@ -13,7 +13,7 @@ import (
 
 // Account model
 type Account struct {
-	model.Base
+	ae.Model
 
 	FirstName string `json:"firstName" datastore:",noindex"`
 	LastName  string `json:"lastName" datastore:",noindex"`

@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"time"
 
-	"github.com/chrisolsen/ae/model"
+	"github.com/chrisolsen/ae"
 	"github.com/russross/blackfriday"
 	"google.golang.org/appengine/datastore"
 )
@@ -36,8 +36,8 @@ func Add(a, b int) int {
 // EncodeKey encodes a datastore key
 func EncodeKey(data interface{}) string {
 	switch data.(type) {
-	case model.Base:
-		return data.(model.Base).Key.Encode()
+	case ae.Model:
+		return data.(ae.Model).Key.Encode()
 	case *datastore.Key:
 		return data.(*datastore.Key).Encode()
 	default:

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/chrisolsen/ae/model"
+	"github.com/chrisolsen/ae"
 	"github.com/chrisolsen/ae/store"
 	"github.com/chrisolsen/ae/uuid"
 	"golang.org/x/net/context"
@@ -14,7 +14,7 @@ import (
 
 // Token .
 type Token struct {
-	model.Base
+	ae.Model
 	UUID   string    `json:"uuid"`
 	Expiry time.Time `json:"expiry" datastore:",noindex"`
 }
