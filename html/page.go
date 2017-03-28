@@ -8,6 +8,7 @@ import (
 	"github.com/chrisolsen/ae/auth"
 )
 
+// Page is the container for data passed to the html form
 type Page map[string]interface{}
 
 // NewPage creates a new page

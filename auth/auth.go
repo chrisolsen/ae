@@ -15,7 +15,10 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
-var ErrNoCookie = errors.New("no cookie found")
+// Errors
+var (
+	ErrNoCookie = errors.New("no cookie found")
+)
 
 // GetToken returns the *Token value for the raw token value contained within the auth cookie or auth header
 func GetToken(c context.Context, r *http.Request) (*Token, error) {

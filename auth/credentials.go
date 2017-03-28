@@ -117,6 +117,7 @@ func (s *CredentialStore) GetByAccount(c context.Context, accountKey *datastore.
 	return datastore.NewQuery(s.TableName).Ancestor(accountKey).GetAll(c, dst)
 }
 
+// UpdatePassword .
 func (s CredentialStore) UpdatePassword(c context.Context, accountKey *datastore.Key, password string) error {
 	var creds []*Credentials
 	keys, err := datastore.NewQuery(s.TableName).

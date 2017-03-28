@@ -12,6 +12,7 @@ var (
 	sessionKey = contextKey("session-key")
 )
 
+// Errors
 var (
 	ErrMissingToken  = errors.New("no auth token found")
 	ErrNoSuchAccount = errors.New("failed to find account")
