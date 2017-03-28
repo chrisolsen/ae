@@ -1,4 +1,4 @@
-package route
+package ae
 
 import (
 	"errors"
@@ -21,8 +21,8 @@ type Route struct {
 	parts  map[string]bool
 }
 
-// New creates a route
-func New(r *http.Request) Route {
+// NewRoute creates a route
+func NewRoute(r *http.Request) Route {
 	return Route{req: r}
 }
 
@@ -41,7 +41,7 @@ func (r *Route) Matches(method, pattern string) bool {
 		return strings.Trim(url.Path, "/") == strings.Trim(pattern, "/")
 	}
 
-	pathParts, patternParts := slice(url.Path), slice(pattern)
+	pathParts, patternParts := slicePath(url.Path), slicePath(pattern)
 	patternPartCount, pathPartCount := len(patternParts), len(pathParts)
 	if pathPartCount != patternPartCount {
 		return false
@@ -96,10 +96,6 @@ func (r *Route) Key(name string) *datastore.Key {
 	return key
 }
 
-func slice(path string) []string {
-	return strings.Split(clean(path), "/")
-}
-
-func clean(val string) string {
-	return strings.Trim(val, "/")
+func slicePath(path string) []string {
+	return strings.Split(strings.Trim(path, "/"), "/")
 }

@@ -1,4 +1,4 @@
-package store
+package ae
 
 import (
 	"fmt"
@@ -8,18 +8,18 @@ import (
 	"google.golang.org/appengine/memcache"
 )
 
-// Base is the include common attrs and methods for other *model types
-type Base struct {
+// Store is the include common attrs and methods for other *model types
+type Store struct {
 	TableName string
 }
 
-// New is a helper to create a base store
-func New(tableName string) Base {
-	return Base{TableName: tableName}
+// NewStore is a helper to create a base store
+func NewStore(tableName string) Store {
+	return Store{TableName: tableName}
 }
 
 // Delete deletes the record and clears the memcached record
-func (b Base) Delete(c context.Context, key *datastore.Key) error {
+func (s Store) Delete(c context.Context, key *datastore.Key) error {
 	err := datastore.Delete(c, key)
 	if err != nil {
 		return err
@@ -29,13 +29,13 @@ func (b Base) Delete(c context.Context, key *datastore.Key) error {
 }
 
 // Create creates the model
-func (b Base) Create(c context.Context, data interface{}, parentKey *datastore.Key) (*datastore.Key, error) {
-	key := datastore.NewIncompleteKey(c, b.TableName, parentKey)
+func (s Store) Create(c context.Context, data interface{}, parentKey *datastore.Key) (*datastore.Key, error) {
+	key := datastore.NewIncompleteKey(c, s.TableName, parentKey)
 	return datastore.Put(c, key, data)
 }
 
 // Update updates the model and clears the memcached data
-func (b Base) Update(c context.Context, key *datastore.Key, data interface{}) error {
+func (s Store) Update(c context.Context, key *datastore.Key, data interface{}) error {
 	_, err := datastore.Put(c, key, data)
 	memcache.Delete(c, key.Encode())
 	return err
@@ -43,7 +43,7 @@ func (b Base) Update(c context.Context, key *datastore.Key, data interface{}) er
 
 // Get attempts to return the cached model, if no cached data exists, it then
 // fetches the data from the database and caches the data
-func (b Base) Get(c context.Context, key *datastore.Key, dst interface{}) (*datastore.Key, error) {
+func (s Store) Get(c context.Context, key *datastore.Key, dst interface{}) (*datastore.Key, error) {
 	encodedKey := key.Encode()
 	_, err := memcache.Gob.Get(c, encodedKey, dst)
 	if err == nil {

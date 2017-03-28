@@ -6,7 +6,6 @@ import (
 
 	"github.com/chrisolsen/ae"
 	"github.com/chrisolsen/ae/attachment"
-	"github.com/chrisolsen/ae/store"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 )
@@ -29,7 +28,7 @@ type Account struct {
 
 // AccountStore .
 type AccountStore struct {
-	store.Base
+	ae.Store
 }
 
 // NewAccountStore returns a setup AccountStore
@@ -45,7 +44,7 @@ func (s *AccountStore) Create(c context.Context, creds *Credentials, account *Ac
 	var accountKey *datastore.Key
 	var cStore = NewCredentialStore()
 	err = datastore.RunInTransaction(c, func(tc context.Context) error {
-		accountKey, err = s.Base.Create(tc, account, nil)
+		accountKey, err = s.Store.Create(tc, account, nil)
 		if err != nil {
 			return fmt.Errorf("failed to create account: %v", err)
 		}

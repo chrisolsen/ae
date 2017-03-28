@@ -1,4 +1,4 @@
-package store
+package ae
 
 import (
 	"os"
@@ -21,7 +21,7 @@ func TestMain(m *testing.M) {
 
 func TestDeleteNonExistingRecord(t *testing.T) {
 	c := T.GetContext()
-	b := Base{}
+	b := Store{}
 	key := datastore.NewIncompleteKey(c, "users", nil)
 	err := b.Delete(c, key)
 	if err == nil {
@@ -32,7 +32,7 @@ func TestDeleteNonExistingRecord(t *testing.T) {
 
 func TestDeleteFromDatastore(t *testing.T) {
 	c := T.GetContext()
-	b := Base{TableName: "users"}
+	b := Store{TableName: "users"}
 
 	type person struct {
 		Name string
@@ -90,7 +90,7 @@ func TestDeleteFromDatastore(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	c := T.GetContext()
-	b := Base{TableName: "users"}
+	b := Store{TableName: "users"}
 
 	type person struct {
 		Name string
@@ -134,7 +134,7 @@ func TestUpdate(t *testing.T) {
 
 func TestGetNilVals(t *testing.T) {
 	c := T.GetContext()
-	s := Base{TableName: "users"}
+	s := Store{TableName: "users"}
 	key := datastore.NewIncompleteKey(c, "users", nil)
 
 	type user struct {
@@ -150,7 +150,7 @@ func TestGetNilVals(t *testing.T) {
 
 func TestGetFromMemcache(t *testing.T) {
 	c := T.GetContext()
-	s := Base{TableName: "users"}
+	s := Store{TableName: "users"}
 	key := datastore.NewIncompleteKey(c, "users", nil)
 
 	type user struct {

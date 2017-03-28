@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/chrisolsen/ae"
-	"github.com/chrisolsen/ae/store"
-	"github.com/chrisolsen/ae/uuid"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/memcache"
@@ -46,7 +44,7 @@ func (t *Token) Save() ([]datastore.Property, error) {
 
 // TokenStore .
 type TokenStore struct {
-	store.Base
+	ae.Store
 }
 
 // NewTokenStore .
@@ -93,8 +91,8 @@ func (s *TokenStore) Get(c context.Context, UUID string) (*Token, error) {
 // Create overrides base method since token creation doesn't need any data
 // other than the account key
 func (s *TokenStore) Create(c context.Context, accountKey *datastore.Key) (*Token, error) {
-	token := Token{UUID: uuid.Random()}
-	_, err := s.Base.Create(c, &token, accountKey)
+	token := Token{UUID: ae.NewV4UUID()}
+	_, err := s.Store.Create(c, &token, accountKey)
 	return &token, err
 }
 
@@ -104,5 +102,5 @@ func (s *TokenStore) Delete(c context.Context, uuid string) error {
 	if err != nil {
 		return err
 	}
-	return s.Base.Delete(c, token.Key)
+	return s.Store.Delete(c, token.Key)
 }

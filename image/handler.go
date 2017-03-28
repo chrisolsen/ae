@@ -6,19 +6,18 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/chrisolsen/ae/handler"
-	"github.com/chrisolsen/ae/route"
+	"github.com/chrisolsen/ae"
 	"golang.org/x/net/context"
 )
 
 // Handler handles Google storage image requests
 type Handler struct {
-	handler.Base
+	ae.Handler
 }
 
 func (h Handler) ServeHTTP(c context.Context, w http.ResponseWriter, r *http.Request) {
 	h.Bind(c, w, r)
-	route := route.New(r)
+	route := ae.NewRoute(r)
 	switch {
 	case route.Matches("GET", "/images/:name"):
 		h.fetch(route.Get("name"))

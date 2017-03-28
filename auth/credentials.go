@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/chrisolsen/ae"
-	"github.com/chrisolsen/ae/store"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 )
@@ -39,7 +38,7 @@ func (c *Credentials) Valid() bool {
 
 // CredentialStore .
 type CredentialStore struct {
-	store.Base
+	ae.Store
 }
 
 // NewCredentialStore .
@@ -85,7 +84,7 @@ func (s *CredentialStore) Create(c context.Context, creds *Credentials, accountK
 		}
 	}
 
-	return s.Base.Create(c, creds, accountKey)
+	return s.Store.Create(c, creds, accountKey)
 }
 
 // GetAccountKeyByProvider .
