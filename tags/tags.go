@@ -12,14 +12,30 @@ const tableName = "tags"
 
 // Tag allows better searching capabilities with AppEngine's Datastore
 type Tag struct {
-	model.Base
-	Value  string
-	Type   string
-	Public bool
+	ae.Model
+	Value string
+	Type  string
+}
+
+// Load toy
+func (t *Tag) Load(ps []datastore.Property) error {
+	if err := datastore.LoadStruct(t, ps); err != nil {
+		switch err.(type) {
+		case *datastore.ErrFieldMismatch:
+		default:
+			return err
+		}
+	}
+	return nil
+}
+
+// Save toy
+func (t *Tag) Save() ([]datastore.Property, error) {
+	return datastore.SaveStruct(t)
 }
 
 // Save saves the tag items with the parent relation
-func Save(c context.Context, rawTags []string, tagType string, public bool, parentKey *datastore.Key) (int, int, error) {
+func Save(c context.Context, rawTags []string, tagType string, parentKey *datastore.Key) (int, int, error) {
 	var delCount int
 	var addCount int
 
@@ -28,7 +44,6 @@ func Save(c context.Context, rawTags []string, tagType string, public bool, pare
 	oldKeys, err := datastore.NewQuery(tableName).
 		Ancestor(parentKey).
 		Filter("Type =", tagType).
-		Filter("Public =", public).
 		GetAll(c, &existingTags)
 	if err != nil {
 		return 0, 0, err
@@ -57,7 +72,7 @@ func Save(c context.Context, rawTags []string, tagType string, public bool, pare
 	}
 	newTags := getTagsToAdd(rawTags, existingTagMap)
 	for _, t := range newTags {
-		tg := &Tag{Value: strings.ToLower(t), Type: tagType, Public: public}
+		tg := &Tag{Value: strings.ToLower(t), Type: tagType}
 		ky := datastore.NewIncompleteKey(c, tableName, parentKey)
 		_, err = datastore.Put(c, ky, tg)
 		if err != nil {
@@ -75,9 +90,11 @@ func FindKeysByTag(c context.Context, tag, tagType string, parentKey *datastore.
 	if parentKey != nil {
 		q = q.Ancestor(parentKey)
 	}
+
 	keys, err := q.
 		Filter("Type =", tagType).
 		Filter("Value =", filter).
+		Order("__key__").
 		Offset(offset).
 		Limit(limit).
 		KeysOnly().
