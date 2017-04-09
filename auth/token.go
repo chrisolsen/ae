@@ -10,6 +10,8 @@ import (
 	"google.golang.org/appengine/memcache"
 )
 
+var ErrInvalidToken = errors.New("invalid token")
+
 // Token .
 type Token struct {
 	ae.Model
@@ -59,6 +61,10 @@ func (s *TokenStore) Get(c context.Context, UUID string) (*Token, error) {
 	var err error
 	var tokens []*Token
 	var cachedToken Token
+
+	if len(UUID) == 0 {
+		return nil, ErrInvalidToken
+	}
 	_, err = memcache.JSON.Get(c, UUID, &cachedToken)
 	if err == nil {
 		return &cachedToken, nil

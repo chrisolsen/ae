@@ -17,7 +17,8 @@ import (
 
 // Errors
 var (
-	ErrNoCookie = errors.New("no cookie found")
+	ErrNoCookie    = errors.New("no cookie found")
+	ErrNoAuthToken = errors.New("no header auth token found")
 )
 
 // GetToken returns the *Token value for the raw token value contained within the auth cookie or auth header
@@ -31,6 +32,9 @@ func GetToken(c context.Context, r *http.Request) (*Token, error) {
 	}
 	if err != nil {
 		return nil, err
+	}
+	if len(uuid) == 0 {
+		return nil, ErrNoAuthToken
 	}
 
 	tstore := NewTokenStore()
