@@ -31,6 +31,9 @@ type Middleware struct {
 	// This is useful for pages or endpoints that render/return differently based on whethe the user
 	// is authenticated or not
 	ContinueWithBadToken bool
+
+	// The signin URL of the web app that the middleware will redirect to on failed cookie auth
+	SignInURL string
 }
 
 // AuthenticateCookie authenticates the token with a request cookie
@@ -38,7 +41,7 @@ func (m *Middleware) AuthenticateCookie(c context.Context, w http.ResponseWriter
 	var accountKey *datastore.Key
 
 	c, cancel := context.WithCancel(c)
-	returnURL := fmt.Sprintf("/signin?returnUrl=%s", r.RequestURI)
+	returnURL := fmt.Sprintf("%s?returnUrl=%s", m.SignInURL, r.RequestURI)
 
 	run := func() error {
 		cookie, err := r.Cookie(cookieName)
