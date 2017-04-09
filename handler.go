@@ -351,6 +351,11 @@ func (h *Handler) SetFlash(msg string, args ...interface{}) {
 	flash.Set(h.Res, msg)
 }
 
+// SetCookie is a simple wrapper around the http.SetCookie methoe
+func (h *Handler) SetCookie(c *http.Cookie) {
+	http.SetCookie(h.Res, c)
+}
+
 // Flash gets the flash value
 func (h *Handler) Flash() string {
 	return flash.Get(h.Res, h.Req)
