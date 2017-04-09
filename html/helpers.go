@@ -49,7 +49,14 @@ func EncodeKey(data interface{}) string {
 // 	<input type="checkbox" {{IsAdmin | checked}}> => <input type="checkbox" checked="checked">
 func Checked(checked bool) template.HTMLAttr {
 	if checked {
-		return template.HTMLAttr(`checked="checked"`)
+		return template.HTMLAttr("checked")
+	}
+	return ""
+}
+
+func Selected(selected bool) template.HTMLAttr {
+	if selected {
+		return template.HTMLAttr("selected")
 	}
 	return ""
 }
@@ -59,7 +66,7 @@ func Checked(checked bool) template.HTMLAttr {
 // 	or
 // 	<button type="submit" {{ValidationError | disabled}}>Save</button> => <button type="submit" disabled="">Save</button>
 func Disabled(err interface{}) template.HTMLAttr {
-	d := template.HTMLAttr(`disabled="disabled"`)
+	d := template.HTMLAttr("disabled")
 	switch err.(type) {
 	case string:
 		if len(err.(string)) == 0 {
@@ -71,6 +78,19 @@ func Disabled(err interface{}) template.HTMLAttr {
 	default:
 		return ""
 	}
+}
+
+// Show returns an empty style attr or display:none
+// 	<div {{IsVisibe | show}}> => <div style="display:none">some hidden text</div>
+func Show(display bool) template.CSS {
+	if display {
+		return template.CSS("")
+	}
+	return template.CSS("display:none;")
+}
+
+func Hide(display bool) template.CSS {
+	return Show(!display)
 }
 
 // KeyEqual allow for *datastore.Key comparison
