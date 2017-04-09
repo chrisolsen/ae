@@ -92,14 +92,14 @@ func Signout(c context.Context, w http.ResponseWriter, r *http.Request) error {
 	return err
 }
 
-// Authorize .
-func Authorize(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials) (*Token, error) {
+// Authenticate .
+func Authenticate(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials) (*Token, error) {
 	var token *Token
 	var err error
 	if len(creds.ProviderName) > 0 {
-		token, err = authorizeOut(c, creds, appEngineURLGetter{Ctx: c})
+		token, err = doExternalAuth(c, creds, appEngineURLGetter{Ctx: c})
 	} else {
-		token, err = authorizeIn(c, creds)
+		token, err = doInternalAuth(c, creds)
 	}
 	if err != nil {
 		return nil, err
@@ -114,7 +114,7 @@ func Authorize(c context.Context, w http.ResponseWriter, r *http.Request, creds 
 	return token, nil
 }
 
-func authorizeIn(c context.Context, creds *Credentials) (*Token, error) {
+func doInternalAuth(c context.Context, creds *Credentials) (*Token, error) {
 	accountStore := NewAccountStore()
 	tokenStore := NewTokenStore()
 
@@ -131,7 +131,7 @@ func authorizeIn(c context.Context, creds *Credentials) (*Token, error) {
 	return token, nil
 }
 
-func authorizeOut(c context.Context, creds *Credentials, urlGetter urlGetter) (*Token, error) {
+func doExternalAuth(c context.Context, creds *Credentials, urlGetter urlGetter) (*Token, error) {
 	var err error
 	tokenStore := NewTokenStore()
 	accountStore := NewAccountStore()
