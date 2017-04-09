@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -54,6 +55,10 @@ func VerifyCSRFToken(c context.Context, w http.ResponseWriter, r *http.Request) 
 			uuid = anonUUID
 		} else if err != nil {
 			return err
+		}
+
+		if csrf == "" {
+			return errors.New("No CSRF token is present in request body")
 		}
 
 		if err := checkCrypt(csrf, csrfSecret+uuid); err != nil {
