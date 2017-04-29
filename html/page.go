@@ -37,7 +37,7 @@ func (p Page) SetError(err interface{}) {
 }
 
 // SetUser sets the current user
-func (p Page) SetUser(user interface{}) {
+func (p Page) SetUser(user interface{}, _ ...interface{}) {
 	p["CurrentUser"] = user
 }
 
