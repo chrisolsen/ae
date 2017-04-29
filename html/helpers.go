@@ -39,17 +39,29 @@ func EncodeKey(data interface{}) string {
 	case ae.Model:
 		return data.(ae.Model).Key.Encode()
 	case *datastore.Key:
-		return data.(*datastore.Key).Encode()
+		key := data.(*datastore.Key)
+		if key == nil {
+			return ""
+		}
+		return key.Encode()
 	default:
 		return ""
 	}
 }
 
+// EncodeParentKey encodes the key's parent
+func EncodeParentKey(key *datastore.Key) string {
+	return key.Parent().Encode()
+}
+
 // Checked returns the checked attribute for positive values.
 // 	<input type="checkbox" {{IsAdmin | checked}}> => <input type="checkbox" checked="checked">
-func Checked(checked bool) template.HTMLAttr {
-	if checked {
-		return template.HTMLAttr("checked")
+func Checked(checked interface{}) template.HTMLAttr {
+	switch checked.(type) {
+	case bool:
+		if checked.(bool) {
+			return template.HTMLAttr("checked")
+		}
 	}
 	return ""
 }
@@ -65,14 +77,19 @@ func Selected(selected bool) template.HTMLAttr {
 // 	<button type="submit" {{HasError | disabled}}>Save</button> => <button type="submit" disabled="">Save</button>
 // 	or
 // 	<button type="submit" {{ValidationError | disabled}}>Save</button> => <button type="submit" disabled="">Save</button>
-func Disabled(err interface{}) template.HTMLAttr {
+func Disabled(obj interface{}) template.HTMLAttr {
 	d := template.HTMLAttr("disabled")
-	switch err.(type) {
+	switch obj.(type) {
 	case string:
-		if len(err.(string)) == 0 {
+		if len(obj.(string)) == 0 {
 			return ""
 		}
 		return d
+	case bool:
+		if obj.(bool) {
+			return d
+		}
+		return ""
 	case error:
 		return d
 	default:
