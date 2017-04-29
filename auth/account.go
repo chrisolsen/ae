@@ -46,24 +46,40 @@ func NewAccountStore() AccountStore {
 	return s
 }
 
+func (s *AccountStore) Valid(a *Account) error {
+	if a.FirstName == "" {
+		return ae.NewValidationError("First name is required")
+	}
+	if a.LastName == "" {
+		return ae.NewValidationError("Last name is required")
+	}
+	if a.LastName == "" {
+		return ae.NewValidationError("Last name is required")
+	}
+	return nil
+}
+
 // Create creates a new account
 func (s *AccountStore) Create(c context.Context, creds *Credentials, account *Account) (*datastore.Key, error) {
 	var err error
 	var accountKey *datastore.Key
 	var cStore = NewCredentialStore()
-	err = datastore.RunInTransaction(c, func(tc context.Context) error {
-		accountKey, err = s.Store.Create(tc, account, nil)
-		if err != nil {
-			return fmt.Errorf("failed to create account: %v", err)
-		}
 
-		_, err = cStore.Create(tc, creds, accountKey)
-		if err != nil {
-			return fmt.Errorf("failed to create credentials: %v", err)
-		}
+	if err = s.Valid(account); err != nil {
+		return nil, err
+	}
+	if err = creds.Valid(); err != nil {
+		return nil, err
+	}
 
-		return nil
-	}, &datastore.TransactionOptions{XG: true})
+	accountKey, err = s.Store.Create(c, account, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create account: %v", err)
+	}
+	_, err = cStore.Create(c, creds, accountKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create credentials: %v", err)
+	}
 
 	return accountKey, nil
 }
