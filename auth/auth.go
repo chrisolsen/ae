@@ -4,10 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
-
-	"net/url"
 
 	"github.com/chrisolsen/fbgraphapi"
 	"golang.org/x/net/context"
@@ -46,19 +45,20 @@ func GetToken(c context.Context, r *http.Request) (*Token, error) {
 func Signup(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials, account *Account) error {
 	astore := NewAccountStore()
 	tstore := NewTokenStore()
-
 	accountKey, err := astore.Create(c, creds, account)
 	if err != nil {
-		return errors.New("failed to create account")
+		return err
 	}
+	account.Key = accountKey
 	token, err := tstore.Create(c, accountKey)
-
+	if err != nil {
+		return err
+	}
 	if accepts(r, "json") {
 		setHeaderToken(w, token.UUID)
 	} else {
 		setAuthCookieToken(w, token.UUID)
 	}
-
 	return nil
 }
 
