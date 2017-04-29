@@ -105,6 +105,17 @@ func (h *Handler) AddHelper(name string, fn interface{}) {
 	h.templateHelpers[name] = fn
 }
 
+// Auth is a helper for the handler operation method that will only call on the operation if allowed
+func (h *Handler) Auth(allowed bool, op func()) {
+	if !allowed {
+		url := fmt.Sprintf("/sessions/new?returnUrl=%s", h.Req.RequestURI)
+		h.SetFlash("Sign in is required")
+		http.Redirect(h.Res, h.Req, url, 301)
+		return
+	}
+	op()
+}
+
 // OriginMiddleware returns a middleware function that validates the origin
 // header within the request matches the allowed values
 func OriginMiddleware(allowed []string) func(context.Context, http.ResponseWriter, *http.Request) context.Context {
