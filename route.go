@@ -26,28 +26,34 @@ func NewRoute(r *http.Request) Route {
 	return Route{req: r}
 }
 
-// Matches checks if the request url matches the passed in pattern. Patterns need to
-// define the arguments at least one leading `:` character.
-// ex.
-//  /foo/:var/bar
-// This method does not validate pattern argument data formats.
-func (r *Route) Matches(method, pattern string) bool {
-	if r.req.Method != strings.ToUpper(method) {
-		return false
-	}
-
+// MatchesPath checks for path matches and allows for wildcards
+func (r *Route) MatchesPath(pattern string) bool {
 	url := r.req.URL
-	if strings.Index(pattern, ":") == -1 {
+	wildcard := strings.Contains(pattern, "*")
+	if strings.Index(pattern, ":") == -1 && !wildcard {
+		if wildcard {
+			return strings.Index(strings.Trim(url.Path, "/"), strings.Trim(pattern, "/*")) == 0
+		}
 		return strings.Trim(url.Path, "/") == strings.Trim(pattern, "/")
 	}
 
 	pathParts, patternParts := slicePath(url.Path), slicePath(pattern)
-	patternPartCount, pathPartCount := len(patternParts), len(pathParts)
-	if pathPartCount != patternPartCount {
-		return false
+
+	var partCount int
+	if wildcard {
+		partCount = len(patternParts) - 1
+		if len(pathParts) < partCount {
+			return false
+		}
+	} else {
+		patternPartCount, pathPartCount := len(patternParts), len(pathParts)
+		if pathPartCount != patternPartCount {
+			return false
+		}
+		partCount = patternPartCount
 	}
 
-	for i := 0; i < patternPartCount; i++ {
+	for i := 0; i < partCount; i++ {
 		pathPart, patternPart := pathParts[i], patternParts[i]
 
 		if len(patternPart) == 0 || patternPart[0] == ':' {
@@ -75,6 +81,18 @@ func (r *Route) Matches(method, pattern string) bool {
 	r.parts = parts
 
 	return true
+}
+
+// Matches checks if the request url matches the passed in pattern. Patterns need to
+// define the arguments at least one leading `:` character.
+// ex.
+//  /foo/:var/bar
+// This method does not validate pattern argument data formats.
+func (r *Route) Matches(method, pattern string) bool {
+	if r.req.Method != strings.ToUpper(method) {
+		return false
+	}
+	return r.MatchesPath(pattern)
 }
 
 // Get returns the named param from the url
