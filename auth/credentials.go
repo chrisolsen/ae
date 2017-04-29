@@ -30,10 +30,21 @@ type Credentials struct {
 }
 
 // Valid indicates if the credentials are valid for one of the two credential types
-func (c *Credentials) Valid() bool {
-	p := len(c.ProviderID) > 0 && len(c.ProviderName) > 0 && len(c.ProviderToken) > 0
-	l := len(c.Username) > 0 && len(c.Password) > 0
-	return p || l
+func (c *Credentials) Valid() error {
+	if len(c.ProviderName) > 0 || len(c.ProviderID) > 0 || len(c.ProviderToken) > 0 {
+		if len(c.ProviderID) == 0 || len(c.ProviderToken) == 0 || len(c.ProviderName) == 0 {
+			return ae.NewValidationError("Incomplete provider credentials")
+		}
+		return nil
+	}
+
+	if len(c.Username) == 0 || len(c.Password) == 0 {
+		if len(c.Username) == 0 {
+			return ae.NewValidationError("Username or email is required")
+		}
+		return ae.NewValidationError("Password is required")
+	}
+	return nil
 }
 
 // CredentialStore .
@@ -50,8 +61,8 @@ func NewCredentialStore() CredentialStore {
 
 // Create .
 func (s *CredentialStore) Create(c context.Context, creds *Credentials, accountKey *datastore.Key) (*datastore.Key, error) {
-	if !creds.Valid() {
-		return nil, errors.New("Invalid credentials")
+	if err := creds.Valid(); err != nil {
+		return nil, err
 	}
 
 	var isProvider = len(creds.ProviderID) > 0
