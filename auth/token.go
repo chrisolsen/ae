@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/chrisolsen/ae"
@@ -99,7 +100,10 @@ func (s *TokenStore) Get(c context.Context, UUID string) (*Token, error) {
 func (s *TokenStore) Create(c context.Context, accountKey *datastore.Key) (*Token, error) {
 	token := Token{UUID: ae.NewV4UUID()}
 	_, err := s.Store.Create(c, &token, accountKey)
-	return &token, err
+	if err != nil {
+		return nil, fmt.Errorf("failed to create token: %v", err)
+	}
+	return &token, nil
 }
 
 // Delete .
