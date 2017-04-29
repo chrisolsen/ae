@@ -10,6 +10,13 @@ import (
 	"google.golang.org/appengine/datastore"
 )
 
+const (
+	AccountStateUnconfirmed = iota
+	AccountStateConfirmed
+	AccountStateSuspended
+	AccountStateTerminated
+)
+
 // Account model
 type Account struct {
 	ae.Model
@@ -22,6 +29,7 @@ type Account struct {
 	Name      string `json:"name" datastore:",noindex"`
 	Timezone  int    `json:"timezone" datastore:",noindex"`
 	Email     string `json:"email"`
+	State     int    `json:"-"`
 
 	Photo attachment.File `json:"photo"`
 }
