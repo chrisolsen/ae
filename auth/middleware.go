@@ -36,6 +36,11 @@ type Middleware struct {
 	SignInURL string
 }
 
+// AuthCookieName returns the name of the auth cook
+func AuthCookieName() string {
+	return cookieName
+}
+
 // AuthenticateCookie authenticates the token with a request cookie
 func (m *Middleware) AuthenticateCookie(c context.Context, w http.ResponseWriter, r *http.Request) context.Context {
 	var accountKey *datastore.Key
