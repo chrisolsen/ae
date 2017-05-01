@@ -72,6 +72,18 @@ var defaultHandlerConfig = HandlerConfig{
 //  	})}
 //  }
 func NewHandler(c *HandlerConfig) Handler {
+	if c.DefaultLayout == "" {
+		c.DefaultLayout = defaultHandlerConfig.DefaultLayout
+	}
+	if c.LayoutPath == "" {
+		c.LayoutPath = defaultHandlerConfig.LayoutPath
+	}
+	if c.ParentLayoutName == "" {
+		c.ParentLayoutName = defaultHandlerConfig.ParentLayoutName
+	}
+	if c.ViewPath == "" {
+		c.ViewPath = defaultHandlerConfig.ViewPath
+	}
 	b := Handler{config: *c} // copy the passed in pointer
 	b.templates = make(map[string]*template.Template)
 	return b
