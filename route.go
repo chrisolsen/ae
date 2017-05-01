@@ -31,9 +31,6 @@ func (r *Route) MatchesPath(pattern string) bool {
 	url := r.req.URL
 	wildcard := strings.Contains(pattern, "*")
 	if strings.Index(pattern, ":") == -1 && !wildcard {
-		if wildcard {
-			return strings.Index(strings.Trim(url.Path, "/"), strings.Trim(pattern, "/*")) == 0
-		}
 		return strings.Trim(url.Path, "/") == strings.Trim(pattern, "/")
 	}
 
