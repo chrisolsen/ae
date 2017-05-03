@@ -13,11 +13,15 @@ import (
 
 var ErrInvalidToken = errors.New("invalid token")
 
-// Token .
+// Token is a child to Account
 type Token struct {
 	ae.Model
 	UUID   string    `json:"uuid"`
 	Expiry time.Time `json:"expiry" datastore:",noindex"`
+}
+
+func (t *Token) AccountKey() *datastore.Key {
+	return t.Key.Parent()
 }
 
 func (t *Token) isExpired() bool {
@@ -98,8 +102,9 @@ func (s *TokenStore) Get(c context.Context, UUID string) (*Token, error) {
 // Create overrides base method since token creation doesn't need any data
 // other than the account key
 func (s *TokenStore) Create(c context.Context, accountKey *datastore.Key) (*Token, error) {
+	var err error
 	token := Token{UUID: ae.NewV4UUID()}
-	_, err := s.Store.Create(c, &token, accountKey)
+	token.Key, err = s.Store.Create(c, &token, accountKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create token: %v", err)
 	}
