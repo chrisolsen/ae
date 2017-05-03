@@ -42,24 +42,36 @@ func GetToken(c context.Context, r *http.Request) (*Token, error) {
 
 // Signup creates a user account and links up the credentials. Based on the request type an auth cookie
 // or header token will be set with an auth token.
-func Signup(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials, account *Account) error {
+func SignupByForm(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials, keepCookie bool) (*datastore.Key, error) {
+	token, err := signup(c, creds)
+	if err != nil {
+		return nil, err
+	}
+	setAuthCookieToken(w, token.UUID, keepCookie)
+	return token.AccountKey(), nil
+}
+
+func SignupByAPI(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials) (*datastore.Key, error) {
+	token, err := signup(c, creds)
+	if err != nil {
+		return nil, err
+	}
+	setHeaderToken(w, token.UUID)
+	return token.AccountKey(), nil
+}
+
+func signup(c context.Context, creds *Credentials) (*Token, error) {
 	astore := NewAccountStore()
 	tstore := NewTokenStore()
-	accountKey, err := astore.Create(c, creds, account)
+	accountKey, err := astore.Create(c, creds)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	account.Key = accountKey
 	token, err := tstore.Create(c, accountKey)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if accepts(r, "json") {
-		setHeaderToken(w, token.UUID)
-	} else {
-		setAuthCookieToken(w, token.UUID)
-	}
-	return nil
+	return token, nil
 }
 
 // Signout deletes the token in the response to the client as well as deletes the token
@@ -93,24 +105,25 @@ func Signout(c context.Context, w http.ResponseWriter, r *http.Request) error {
 }
 
 // Authenticate .
-func Authenticate(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials) (*Token, error) {
+func AuthenticateHeader(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials) (*Token, error) {
 	var token *Token
 	var err error
-	if len(creds.ProviderName) > 0 {
-		token, err = doExternalAuth(c, creds, appEngineURLGetter{Ctx: c})
-	} else {
-		token, err = doInternalAuth(c, creds)
-	}
+	token, err = doExternalAuth(c, creds, appEngineURLGetter{Ctx: c})
 	if err != nil {
 		return nil, err
 	}
+	setHeaderToken(w, token.UUID)
+	return token, nil
+}
 
-	if accepts(r, "json") {
-		setHeaderToken(w, token.UUID)
-	} else {
-		setAuthCookieToken(w, token.UUID)
+func AuthenticateForm(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials, keepCookie bool) (*Token, error) {
+	var token *Token
+	var err error
+	token, err = doInternalAuth(c, creds)
+	if err != nil {
+		return nil, err
 	}
-
+	setAuthCookieToken(w, token.UUID, keepCookie)
 	return token, nil
 }
 
