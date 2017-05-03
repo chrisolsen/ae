@@ -170,15 +170,18 @@ func clearCookie(w http.ResponseWriter) {
 	})
 }
 
-func setAuthCookieToken(w http.ResponseWriter, uuid string) {
-	http.SetCookie(w, &http.Cookie{
+func setAuthCookieToken(w http.ResponseWriter, uuid string, keepCookie bool) {
+	c := &http.Cookie{
 		Name:     cookieName,
 		Path:     "/",
-		Expires:  time.Now().Add(time.Hour * 24 * 14),
 		HttpOnly: true,
 		Secure:   !appengine.IsDevAppServer(),
 		Value:    uuid,
-	})
+	}
+	if keepCookie {
+		c.Expires = time.Now().Add(time.Hour * 24 * 14)
+	}
+	http.SetCookie(w, c)
 }
 
 func setHeaderToken(w http.ResponseWriter, uuid string) {
