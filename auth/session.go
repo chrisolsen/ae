@@ -21,25 +21,6 @@ var (
 // Session provides helper methods to get and set the account key within the request context
 type Session struct{}
 
-// Account fetches the account either from the cache or datastore
-func (s *Session) Account(c context.Context) (*Account, error) {
-	key, err := s.AccountKey(c)
-	if err != nil {
-		return nil, err
-	}
-
-	store := NewAccountStore()
-	var account Account
-	account.Key, err = store.Get(c, key, &account)
-	if err == datastore.ErrNoSuchEntity {
-		return nil, ErrNoSuchAccount
-	}
-	if err != nil {
-		return nil, err
-	}
-	return &account, err
-}
-
 // SignedIn returns boolean value indicating if the user is signed in or not
 func (s *Session) SignedIn(c context.Context) bool {
 	key, err := s.AccountKey(c)
