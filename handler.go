@@ -52,14 +52,18 @@ type Handler struct {
 
 // HandlerConfig contains the custom handler configuration settings
 type HandlerConfig struct {
-	DefaultLayout    string
-	LayoutPath       string
-	ViewPath         string
+	// File name of the layout
+	LayoutFileName string
+	// Path, relative to the app root, of layouts
+	LayoutPath string
+	// Path, relative to the app root, of layouts
+	ViewPath string
+	// ???
 	ParentLayoutName string
 }
 
 var defaultHandlerConfig = HandlerConfig{
-	DefaultLayout:    "application.html",
+	LayoutFileName:   "application.html",
 	LayoutPath:       "layouts",
 	ViewPath:         "views",
 	ParentLayoutName: "layout",
@@ -68,12 +72,12 @@ var defaultHandlerConfig = HandlerConfig{
 // NewHandler allows one to override the default configuration settings.
 //  func NewRootHandler() rootHandler {
 //  	return rootHandler{Handler: handler.New(&handler.Config{
-//  		LayoutPath: "layouts/admin.html",
+//  		LayoutPath: "layouts",
 //  	})}
 //  }
 func NewHandler(c *HandlerConfig) Handler {
-	if c.DefaultLayout == "" {
-		c.DefaultLayout = defaultHandlerConfig.DefaultLayout
+	if c.LayoutFileName == "" {
+		c.LayoutFileName = defaultHandlerConfig.LayoutFileName
 	}
 	if c.LayoutPath == "" {
 		c.LayoutPath = defaultHandlerConfig.LayoutPath
@@ -261,7 +265,7 @@ func (h *Handler) Render(path string, data interface{}) {
 	h.RenderTemplate(path, data, RenderOptions{
 		Name:    h.config.ParentLayoutName,
 		FuncMap: h.templateHelpers,
-		Parents: []string{filepath.Join(h.config.LayoutPath, h.config.DefaultLayout)},
+		Parents: []string{filepath.Join(h.config.LayoutPath, h.config.LayoutFileName)},
 	})
 }
 
