@@ -47,7 +47,7 @@ func SignupByForm(c context.Context, w http.ResponseWriter, r *http.Request, cre
 	if err != nil {
 		return nil, err
 	}
-	setAuthCookieToken(w, token.UUID, keepCookie)
+	SetAuthCookieToken(w, token.UUID, keepCookie)
 	return token.AccountKey(), nil
 }
 
@@ -123,7 +123,7 @@ func AuthenticateForm(c context.Context, w http.ResponseWriter, r *http.Request,
 	if err != nil {
 		return nil, err
 	}
-	setAuthCookieToken(w, token.UUID, keepCookie)
+	SetAuthCookieToken(w, token.UUID, keepCookie)
 	return token, nil
 }
 
@@ -183,7 +183,7 @@ func clearCookie(w http.ResponseWriter) {
 	})
 }
 
-func setAuthCookieToken(w http.ResponseWriter, uuid string, keepCookie bool) {
+func SetAuthCookieToken(w http.ResponseWriter, uuid string, keepCookie bool) {
 	c := &http.Cookie{
 		Name:     cookieName,
 		Path:     "/",
