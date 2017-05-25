@@ -29,7 +29,7 @@ func NewCSRFToken(r *http.Request) string {
 
 // VerifyCSRFToken middleware method to check token
 func VerifyCSRFToken(c context.Context, w http.ResponseWriter, r *http.Request) context.Context {
-	if r.Method != http.MethodPost {
+	if r.Method == http.MethodGet {
 		return c
 	}
 
