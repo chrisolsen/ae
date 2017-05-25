@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/chrisolsen/ae"
-	"github.com/chrisolsen/ae/attachment"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 )
@@ -20,19 +19,6 @@ const (
 // Account model
 type Account struct {
 	ae.Model
-
-	// These fields are deprecated
-	FirstName string          `json:"firstName" datastore:",noindex"`
-	LastName  string          `json:"lastName" datastore:",noindex"`
-	Gender    string          `json:"gender" datastore:",noindex"`
-	Locale    string          `json:"locale" datastore:",noindex"`
-	Location  string          `json:"location" datastore:",noindex"`
-	Name      string          `json:"name" datastore:",noindex"`
-	Timezone  int             `json:"timezone" datastore:",noindex"`
-	Email     string          `json:"email"`
-	Photo     attachment.File `json:"photo"`
-	// end of deprecated fields
-
 	State int `json:"-"`
 }
 
@@ -48,34 +34,18 @@ func NewAccountStore() AccountStore {
 	return s
 }
 
-// func (s *AccountStore) Valid(a *Account) error {
-// 	if a.FirstName == "" {
-// 		return ae.NewValidationError("First name is required")
-// 	}
-// 	if a.LastName == "" {
-// 		return ae.NewValidationError("Last name is required")
-// 	}
-// 	if a.LastName == "" {
-// 		return ae.NewValidationError("Last name is required")
-// 	}
-// 	return nil
-// }
-
 // Create creates a new account
 func (s *AccountStore) Create(c context.Context, creds *Credentials) (*datastore.Key, error) {
 	var err error
 	var accountKey *datastore.Key
 	var cStore = NewCredentialStore()
 
-	// if err = s.Valid(account); err != nil {
-	// 	return nil, err
-	// }
 	if err = creds.Valid(); err != nil {
 		return nil, err
 	}
 
-	account := &Account{}
-	accountKey, err = s.Store.Create(c, account, nil)
+	account := Account{}
+	accountKey, err = s.Store.Create(c, &account, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create account: %v", err)
 	}
