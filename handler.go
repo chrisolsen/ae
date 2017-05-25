@@ -387,3 +387,19 @@ func (h *Handler) SetCookie(c *http.Cookie) {
 func (h *Handler) Flash() string {
 	return flash.Get(h.Res, h.Req)
 }
+
+// RenderError will render a the file that corresponds to the status code ex. http.InternalServerError will render 500.html
+func (h *Handler) RenderError(status int, details string) {
+	var msg string
+	switch status {
+	case 500:
+		msg = "Something bad happened!"
+	case 404:
+		msg = "Oops! Page not found"
+	case 401:
+		msg = "Authorized access only. Identify yourself!"
+	case 403:
+		msg = "Security access fail (robot voice)"
+	}
+	h.RenderTemplate("error.html", map[string]interface{}{"Status": status, "Message": msg, "Details": details}, RenderOptions{Status: status})
+}
