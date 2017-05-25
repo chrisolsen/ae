@@ -3,11 +3,16 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/chrisolsen/ae"
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 )
+
+var ErrNoCredentialsFound = errors.New("no credentials found")
+var ErrMultipleCredentialsFound = errors.New("more than one credential found")
+var ErrPasswordMismatch = errors.New("invalid password match")
 
 // Credentials contain authentication details for various providers / methods
 type Credentials struct {
@@ -127,8 +132,19 @@ func (s *CredentialStore) GetByAccount(c context.Context, accountKey *datastore.
 	return datastore.NewQuery(s.TableName).Ancestor(accountKey).GetAll(c, dst)
 }
 
-// UpdatePassword .
-func (s CredentialStore) UpdatePassword(c context.Context, accountKey *datastore.Key, password string) error {
+// SetPassword allows the user to set their password to a new value when providing a token linked
+// to the account
+func (s CredentialStore) SetPassword(c context.Context, password string, tokenUUID string) error {
+	tstore := NewTokenStore()
+	t, err := tstore.Get(c, tokenUUID)
+	if err != nil {
+		return errors.New("invalid token")
+	}
+	if t.Expiry.Before(time.Now()) {
+		return errors.New("token is expired")
+	}
+	accountKey := t.Key.Parent()
+
 	var creds []*Credentials
 	keys, err := datastore.NewQuery(s.TableName).
 		Ancestor(accountKey).
@@ -139,14 +155,46 @@ func (s CredentialStore) UpdatePassword(c context.Context, accountKey *datastore
 		return err
 	}
 	if len(keys) == 0 {
-		return errors.New("no credentials found")
+		return ErrNoCredentialsFound
 	}
 	if len(keys) > 1 {
-		return errors.New("more than one credential found")
+		return ErrMultipleCredentialsFound
 	}
-
 	key, cred := keys[0], creds[0]
 	cred.Password, err = encrypt(password)
+	if err != nil {
+		return errors.New("failed to encrypt password")
+	}
+
+	if err := tstore.Delete(c, tokenUUID); err != nil {
+		return errors.New("failed to delete token")
+	}
+
+	return s.Update(c, key, cred)
+}
+
+// UpdatePassword allows the user to set their password to a new value when providing their current password
+func (s CredentialStore) UpdatePassword(c context.Context, currentPassword, newPassword string, accountKey *datastore.Key) error {
+	var creds []*Credentials
+	keys, err := datastore.NewQuery(s.TableName).
+		Ancestor(accountKey).
+		Filter("ProviderID =", "").
+		GetAll(c, &creds)
+
+	if err != nil {
+		return err
+	}
+	if len(keys) == 0 {
+		return ErrNoCredentialsFound
+	}
+	if len(keys) > 1 {
+		return ErrMultipleCredentialsFound
+	}
+	if err := checkCrypt(creds[0].Password, currentPassword); err != nil {
+		return ErrPasswordMismatch
+	}
+	key, cred := keys[0], creds[0]
+	cred.Password, err = encrypt(newPassword)
 	if err != nil {
 		return errors.New("failed to encrypt password")
 	}
