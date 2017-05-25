@@ -19,32 +19,19 @@ type Handler interface {
 	ServeHTTP(context.Context, http.ResponseWriter, *http.Request)
 }
 
-// handler allows the middleware calls to be wrapped up into a Handler interface
-type handler struct {
-	mw      Middleware
-	handler Handler
-}
-
-func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c := appengine.NewContext(r)
-	c = h.mw(c, w, r)
-	if c.Err() == nil {
-		h.handler.ServeHTTP(c, w, r)
-	}
-}
-
 // Q allows a list middleware functions to be created and run
 type Q struct {
-	fns []Middleware
+	ops     []Middleware
+	handler Handler
 }
 
 // New initializes the middleware chain with one or more handler functions.
 // The returned pointer allows for additional middleware methods to be added or
 // for the chain to be run.
 //	q := que.New(foo, bar)
-func New(fns ...Middleware) *Q {
+func New(ops ...Middleware) *Q {
 	q := Q{}
-	q.fns = fns
+	q.ops = ops
 	return &q
 }
 
@@ -52,8 +39,8 @@ func New(fns ...Middleware) *Q {
 // existing chain
 //	q := que.New(cors, format)
 //	q.Add(auth)
-func (q *Q) Add(fns ...Middleware) {
-	q.fns = append(q.fns, fns...)
+func (q *Q) Add(ops ...Middleware) {
+	q.ops = append(q.ops, ops...)
 }
 
 // Run executes the handler chain, which is most useful in tests
@@ -67,64 +54,51 @@ func (q *Q) Add(fns ...Middleware) {
 // 	c := appengine.NewContext(r)
 // 	q.Run(c, w, r)
 func (q *Q) Run(c context.Context, w http.ResponseWriter, r *http.Request) {
-	chain(q.fns)(c, w, r)
+	for _, op := range q.ops {
+		c = op(c, w, r)
+		if c.Err() != nil {
+			return
+		}
+	}
 }
 
-// Then returns the chain of existing middleware that includes the final HandlerFunc argument.
+// HandleFunc returns the chain of existing middleware that includes the final HandlerFunc argument.
 //	q := que.New(foo, bar)
-//  router.Get("/", q.Then(handleRoot))
-func (q *Q) Then(fn HandlerFunc) func(http.ResponseWriter, *http.Request) {
-	chn := chain(q.fns)
-
+//  router.Get("/", q.HandleFunc(handleRoot))
+func (q *Q) HandleFunc(fn HandlerFunc) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		c := appengine.NewContext(r)
-		c = chn(c, w, r)
-
-		if c.Err() == nil {
-			fn(c, w, r)
+		for _, op := range q.ops {
+			c = op(c, w, r)
+			if c.Err() != nil {
+				return
+			}
 		}
+		fn(c, w, r)
 	}
 }
 
 // Handle accepts a Handler interface and returns the chain of existing middleware
 // that includes the final Handler argument.
 //	q := que.New(foo, bar)
-//  router.Get("/", q.Then(handleRoot))
+//  router.Get("/", q.Handle(handleRoot))
 func (q *Q) Handle(h Handler) http.Handler {
-	mw := chain(q.fns)
-	return handler{mw: mw, handler: h}
+	return handler{ops: q.ops, handler: h}
 }
 
-// converts the middleware slice into a series of middleware functions and returns
-// a reference to the first middleware item in the chain
-func chain(fns []Middleware) Middleware {
-	var next Middleware
-	var count = len(fns)
-	for i := count - 1; i >= 0; i-- {
-		next = link(fns[i], next)
-	}
-
-	// if there is no middleware a non-nil function is required to allow the final
-	// handler function to be called
-	if count == 0 {
-		next = func(c context.Context, w http.ResponseWriter, r *http.Request) context.Context {
-			return c
-		}
-	}
-
-	return next
+// handler allows the middleware calls to be wrapped up into a Handler interface
+type handler struct {
+	ops     []Middleware
+	handler Handler
 }
 
-// links the two middleware functions to allow the first to call the next on completion
-func link(current, next Middleware) Middleware {
-	return func(c context.Context, w http.ResponseWriter, r *http.Request) context.Context {
-		c = current(c, w, r)
+func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c := appengine.NewContext(r)
+	for _, op := range h.ops {
+		c = op(c, w, r)
 		if c.Err() != nil {
-			return c
+			return
 		}
-		if next != nil {
-			c = next(c, w, r)
-		}
-		return c
 	}
+	h.handler.ServeHTTP(c, w, r)
 }
