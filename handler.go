@@ -124,6 +124,7 @@ func (h *Handler) AddHelper(name string, fn interface{}) {
 // Auth is a helper for the handler operation method that will only call on the operation if allowed
 func (h *Handler) Auth(allowed bool, op func()) {
 	if !allowed {
+		// FIXME: this path needs to be settable
 		url := fmt.Sprintf("/sessions/new?returnUrl=%s", h.Req.RequestURI)
 		h.SetFlash("Sign in is required")
 		http.Redirect(h.Res, h.Req, url, 301)
@@ -183,20 +184,21 @@ func validateOrigin(origin string, allowed []string) bool {
 
 // ToJSON encodes an interface into the response writer with a default http
 // status code of 200
-func (h *Handler) ToJSON(data interface{}) {
+func (h *Handler) ToJSON(data interface{}) error {
 	h.Res.Header().Add("Content-Type", "application/json")
 	err := json.NewEncoder(h.Res).Encode(data)
 	if err != nil {
 		h.Abort(http.StatusInternalServerError, fmt.Errorf("Decoding JSON: %v", err))
 	}
+	return err
 }
 
 // ToJSONWithStatus json encodes an interface into the response writer with a
 // custom http status code
-func (h *Handler) ToJSONWithStatus(data interface{}, status int) {
+func (h *Handler) ToJSONWithStatus(data interface{}, status int) error {
 	h.Res.Header().Add("Content-Type", "application/json")
 	h.Res.WriteHeader(status)
-	h.ToJSON(data)
+	return h.ToJSON(data)
 }
 
 // SendStatus writes the passed in status to the response without any data
