@@ -184,21 +184,20 @@ func validateOrigin(origin string, allowed []string) bool {
 
 // ToJSON encodes an interface into the response writer with a default http
 // status code of 200
-func (h *Handler) ToJSON(data interface{}) error {
+func (h *Handler) ToJSON(data interface{}) {
 	h.Res.Header().Add("Content-Type", "application/json")
 	err := json.NewEncoder(h.Res).Encode(data)
 	if err != nil {
 		h.Abort(http.StatusInternalServerError, fmt.Errorf("Decoding JSON: %v", err))
 	}
-	return err
 }
 
 // ToJSONWithStatus json encodes an interface into the response writer with a
 // custom http status code
-func (h *Handler) ToJSONWithStatus(data interface{}, status int) error {
+func (h *Handler) ToJSONWithStatus(data interface{}, status int) {
 	h.Res.Header().Add("Content-Type", "application/json")
 	h.Res.WriteHeader(status)
-	return h.ToJSON(data)
+	h.ToJSON(data)
 }
 
 // SendStatus writes the passed in status to the response without any data
