@@ -36,7 +36,7 @@ func GetToken(c context.Context, r *http.Request) (*Token, error) {
 		return nil, ErrNoAuthToken
 	}
 
-	tstore := NewTokenStore()
+	tstore := newTokenStore()
 	return tstore.Get(c, uuid)
 }
 
@@ -61,13 +61,13 @@ func SignupByAPI(c context.Context, w http.ResponseWriter, r *http.Request, cred
 }
 
 func signup(c context.Context, creds *Credentials) (*Token, error) {
-	astore := NewAccountStore()
-	tstore := NewTokenStore()
-	accountKey, err := astore.Create(c, creds)
+	aSvc := NewAccountSvc()
+	tSvc := NewTokenSvc()
+	accountKey, err := aSvc.Create(c, creds)
 	if err != nil {
 		return nil, err
 	}
-	token, err := tstore.Create(c, accountKey)
+	token, err := tSvc.Create(c, accountKey)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func Signout(c context.Context, w http.ResponseWriter, r *http.Request) error {
 		clearCookie(w)
 	}
 
-	store := NewTokenStore()
+	store := newTokenStore()
 	token, err := store.Get(c, uuid)
 	if err != nil {
 		return err
@@ -128,15 +128,15 @@ func AuthenticateForm(c context.Context, w http.ResponseWriter, r *http.Request,
 }
 
 func doInternalAuth(c context.Context, creds *Credentials) (*Token, error) {
-	accountStore := NewAccountStore()
-	tokenStore := NewTokenStore()
+	aSvc := NewAccountSvc()
+	tSvc := NewTokenSvc()
 
-	accountKey, err := accountStore.GetAccountKeyByCredentials(c, creds)
+	accountKey, err := aSvc.GetAccountKeyByCredentials(c, creds)
 	if err != nil {
 		return nil, fmt.Errorf("getting account key by credentials: %v", err)
 	}
 
-	token, err := tokenStore.Create(c, accountKey)
+	token, err := tSvc.Create(c, accountKey)
 	if err != nil {
 		return nil, err
 	}
@@ -146,8 +146,8 @@ func doInternalAuth(c context.Context, creds *Credentials) (*Token, error) {
 
 func doExternalAuth(c context.Context, creds *Credentials, urlGetter urlGetter) (*Token, error) {
 	var err error
-	tokenStore := NewTokenStore()
-	accountStore := NewAccountStore()
+	aSvc := NewAccountSvc()
+	tSvc := NewTokenSvc()
 
 	switch creds.ProviderName {
 	case "facebook":
@@ -159,12 +159,12 @@ func doExternalAuth(c context.Context, creds *Credentials, urlGetter urlGetter) 
 		return nil, fmt.Errorf("authenticate: %v", err)
 	}
 
-	accountKey, err := accountStore.GetAccountKeyByCredentials(c, creds)
+	accountKey, err := aSvc.GetAccountKeyByCredentials(c, creds)
 	if err != nil {
 		return nil, fmt.Errorf("getting account key by credentials: %v", err)
 	}
 
-	token, err := tokenStore.Create(c, accountKey)
+	token, err := tSvc.Create(c, accountKey)
 	if err != nil {
 		return nil, err
 	}

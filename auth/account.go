@@ -23,33 +23,44 @@ type Account struct {
 }
 
 // AccountStore .
-type AccountStore struct {
+type accountStore struct {
 	ae.Store
 }
 
 // NewAccountStore returns a setup AccountStore
-func NewAccountStore() AccountStore {
-	s := AccountStore{}
+func newAccountStore() accountStore {
+	s := accountStore{}
 	s.TableName = "accounts"
 	return s
 }
 
+type AccountSvc struct {
+	accountStore
+
+	credentialStore CredentialStore
+}
+
+func NewAccountSvc() AccountSvc {
+	return AccountSvc{
+		accountStore:    newAccountStore(),
+		credentialStore: NewCredentialStore(),
+	}
+}
+
 // Create creates a new account
-func (s *AccountStore) Create(c context.Context, creds *Credentials) (*datastore.Key, error) {
+func (s AccountSvc) Create(c context.Context, creds *Credentials) (*datastore.Key, error) {
 	var err error
 	var accountKey *datastore.Key
-	var cStore = NewCredentialStore()
+	var account Account
 
 	if err = creds.Valid(); err != nil {
 		return nil, err
 	}
-
-	account := Account{}
-	accountKey, err = s.Store.Create(c, &account, nil)
+	accountKey, err = s.accountStore.Create(c, &account, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create account: %v", err)
 	}
-	_, err = cStore.Create(c, creds, accountKey)
+	_, err = s.credentialStore.Create(c, creds, accountKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create credentials: %v", err)
 	}
@@ -58,13 +69,12 @@ func (s *AccountStore) Create(c context.Context, creds *Credentials) (*datastore
 }
 
 // GetAccountKeyByCredentials fetches the account matching the auth provider credentials
-func (s *AccountStore) GetAccountKeyByCredentials(c context.Context, creds *Credentials) (*datastore.Key, error) {
+func (s AccountSvc) GetAccountKeyByCredentials(c context.Context, creds *Credentials) (*datastore.Key, error) {
 	var err error
-	cstore := NewCredentialStore()
 	// on initial signup the account key will exist within the credentials
 	if creds.AccountKey != nil {
 		var accountCreds []*Credentials
-		_, err = cstore.GetByAccount(c, creds.AccountKey, &accountCreds)
+		_, err = s.credentialStore.GetByAccount(c, creds.AccountKey, &accountCreds)
 		if err != nil {
 			return nil, fmt.Errorf("failed to find credentials by parent account: %v", err)
 		}
@@ -79,12 +89,12 @@ func (s *AccountStore) GetAccountKeyByCredentials(c context.Context, creds *Cred
 
 	// by provider
 	if len(creds.ProviderID) > 0 {
-		return cstore.GetAccountKeyByProvider(c, creds)
+		return s.credentialStore.GetAccountKeyByProvider(c, creds)
 	}
 
 	// by username
 	var userNameCreds []*Credentials
-	ckeys, err := cstore.GetByUsername(c, creds.Username, &userNameCreds)
+	ckeys, err := s.credentialStore.GetByUsername(c, creds.Username, &userNameCreds)
 	if err != nil {
 		return nil, err
 	}

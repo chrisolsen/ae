@@ -135,7 +135,7 @@ func (s *CredentialStore) GetByAccount(c context.Context, accountKey *datastore.
 // SetPassword allows the user to set their password to a new value when providing a token linked
 // to the account
 func (s CredentialStore) SetPassword(c context.Context, password string, tokenUUID string) error {
-	tstore := NewTokenStore()
+	tstore := newTokenStore()
 	t, err := tstore.Get(c, tokenUUID)
 	if err != nil {
 		return errors.New("invalid token")

@@ -49,20 +49,28 @@ func (t *Token) Save() ([]datastore.Property, error) {
 	return datastore.SaveStruct(t)
 }
 
+type TokenSvc struct {
+	tokenStore
+}
+
+func NewTokenSvc() TokenSvc {
+	return TokenSvc{tokenStore: newTokenStore()}
+}
+
 // TokenStore .
-type TokenStore struct {
+type tokenStore struct {
 	ae.Store
 }
 
 // NewTokenStore .
-func NewTokenStore() TokenStore {
-	s := TokenStore{}
+func newTokenStore() tokenStore {
+	s := tokenStore{}
 	s.TableName = "tokens"
 	return s
 }
 
 // Get overrides the base get to allow lookup by the uuid rather than a key
-func (s *TokenStore) Get(c context.Context, UUID string) (*Token, error) {
+func (s tokenStore) Get(c context.Context, UUID string) (*Token, error) {
 	var err error
 	var tokens []*Token
 	var cachedToken Token
@@ -101,7 +109,7 @@ func (s *TokenStore) Get(c context.Context, UUID string) (*Token, error) {
 
 // Create overrides base method since token creation doesn't need any data
 // other than the account key
-func (s *TokenStore) Create(c context.Context, accountKey *datastore.Key) (*Token, error) {
+func (s tokenStore) Create(c context.Context, accountKey *datastore.Key) (*Token, error) {
 	var err error
 	token := Token{UUID: ae.NewV4UUID()}
 	token.Key, err = s.Store.Create(c, &token, accountKey)
@@ -112,7 +120,7 @@ func (s *TokenStore) Create(c context.Context, accountKey *datastore.Key) (*Toke
 }
 
 // Delete .
-func (s *TokenStore) Delete(c context.Context, uuid string) error {
+func (s *tokenStore) Delete(c context.Context, uuid string) error {
 	token, err := s.Get(c, uuid)
 	if err != nil {
 		return err

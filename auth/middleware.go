@@ -155,7 +155,7 @@ func (m *Middleware) AuthenticateToken(c context.Context, w http.ResponseWriter,
 
 // Gets the token for the rawToken value
 func (m *Middleware) getToken(c context.Context, uuid string) (*Token, error) {
-	var store = NewTokenStore()
+	var store = newTokenStore()
 	token, err := store.Get(c, uuid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token from store: %v", err)
@@ -165,7 +165,7 @@ func (m *Middleware) getToken(c context.Context, uuid string) (*Token, error) {
 
 // Creates a new token and links it to the account for the old token
 func (m *Middleware) getNewToken(c context.Context, oldToken *Token) (*Token, error) {
-	store := NewTokenStore()
+	store := newTokenStore()
 	newToken, err := store.Create(c, oldToken.Key.Parent())
 	if err != nil {
 		return nil, err
