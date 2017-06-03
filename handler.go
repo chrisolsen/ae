@@ -390,18 +390,26 @@ func (h *Handler) Flash() string {
 	return flash.Get(h.Res, h.Req)
 }
 
+type ServerError struct {
+	Status                       int
+	Message, Details, StackTrace string
+}
+
+var defaultServerErrMsgs = map[int]string{
+	500: "Something bad happened!",
+	404: "Oops! Page not found",
+	401: "Authorized access only. Identify yourself!",
+	403: "Security access fail!",
+}
+
 // RenderError will render a the file that corresponds to the status code ex. http.InternalServerError will render 500.html
-func (h *Handler) RenderError(status int, details string) {
-	var msg string
-	switch status {
-	case 500:
-		msg = "Something bad happened!"
-	case 404:
-		msg = "Oops! Page not found"
-	case 401:
-		msg = "Authorized access only. Identify yourself!"
-	case 403:
-		msg = "Security access fail (robot voice)"
+func (h *Handler) RenderError(status int, err *ServerError) {
+	if err == nil {
+		err = &ServerError{}
 	}
-	h.RenderTemplate("error.html", map[string]interface{}{"Status": status, "Message": msg, "Details": details}, RenderOptions{Status: status})
+	err.Status = status
+	if err.Message == "" {
+		err.Message = defaultServerErrMsgs[status]
+	}
+	h.RenderTemplate("error.html", err, RenderOptions{Status: status})
 }
