@@ -32,6 +32,10 @@ func (ra *File) Bytes() ([]byte, error) {
 // Store provides the methods to save to the external storage service
 type Store struct{}
 
+func NewStore() Store {
+	return Store{}
+}
+
 // Storer makes testing easier
 type Storer interface {
 	CreateWithData(c context.Context, data []byte, contentType string) (*File, error)
