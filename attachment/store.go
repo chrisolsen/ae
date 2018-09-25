@@ -1,6 +1,7 @@
 package attachment
 
 import (
+	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/chrisolsen/ae"
 
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/urlfetch"
 )
 

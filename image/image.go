@@ -1,6 +1,7 @@
 package image
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"image"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/chrisolsen/ae/attachment"
 	"github.com/disintegration/imaging"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/file"
 	"google.golang.org/appengine/urlfetch"
 )

@@ -1,12 +1,12 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/log"
 )
 
@@ -28,13 +28,12 @@ func NewCSRFToken(r *http.Request) string {
 }
 
 // VerifyCSRFToken middleware method to check token
-func VerifyCSRFToken(c context.Context, w http.ResponseWriter, r *http.Request) context.Context {
+func VerifyCSRFToken(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		return c
+		return
 	}
 
 	var csrf string
-	c2, cancel := context.WithCancel(c)
 
 	err := func() error {
 		if strings.Contains(r.Header.Get("Content-Type"), "multipart/form-data") {
@@ -68,9 +67,8 @@ func VerifyCSRFToken(c context.Context, w http.ResponseWriter, r *http.Request) 
 	}()
 
 	if err != nil {
-		log.Errorf(c, err.Error())
+		c2, cancel := context.WithCancel(r.Context())
+		log.Errorf(c2, err.Error())
 		cancel()
 	}
-
-	return c2
 }

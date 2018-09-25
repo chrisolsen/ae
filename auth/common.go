@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/urlfetch"
 )
 

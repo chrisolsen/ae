@@ -1,6 +1,7 @@
 package ae
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/json"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	"github.com/chrisolsen/ae/flash"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
 )
@@ -41,7 +41,6 @@ func (e *handlerError) Error() string {
 
 // Handler struct designed to be extended by more specific url handlers
 type Handler struct {
-	Ctx context.Context
 	Req *http.Request
 	Res http.ResponseWriter
 
@@ -101,6 +100,10 @@ func DefaultHandler() Handler {
 	return NewHandler(&defaultHandlerConfig)
 }
 
+func (h *Handler) Ctx() context.Context {
+	return h.Req.Context()
+}
+
 // AddHelpers sets the html.template functions for the handler. This method should be
 // called once to intialize the handler with a set of common template helpers used
 // throughout the app.
@@ -135,24 +138,23 @@ func (h *Handler) Auth(allowed bool, op func()) {
 
 // OriginMiddleware returns a middleware function that validates the origin
 // header within the request matches the allowed values
-func OriginMiddleware(allowed []string) func(context.Context, http.ResponseWriter, *http.Request) context.Context {
-	return func(c context.Context, w http.ResponseWriter, r *http.Request) context.Context {
+func OriginMiddleware(allowed []string) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
 		if len(origin) == 0 {
-			return c
+			return
 		}
 		ok := validateOrigin(origin, allowed)
 		if !ok {
-			c2, cancel := context.WithCancel(c)
+			c2, cancel := context.WithCancel(r.Context())
 			cancel()
-			return c2
+			*r = *r.WithContext(c2)
+			return
 		}
 
 		w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS")
 		w.Header().Add("Access-Control-Allow-Origin", origin)
-
-		return c
 	}
 }
 
@@ -162,7 +164,8 @@ func (h *Handler) ValidateOrigin(allowed []string) {
 	origin := h.Req.Header.Get("Origin")
 	ok := validateOrigin(origin, allowed)
 	if !ok {
-		_, cancel := context.WithCancel(h.Ctx)
+		c, cancel := context.WithCancel(h.Req.Context())
+		h.Req = h.Req.WithContext(c)
 		cancel()
 	}
 }
@@ -206,8 +209,8 @@ func (h *Handler) SendStatus(status int) {
 }
 
 // Bind must be called at the beginning of every request to set the required references
-func (h *Handler) Bind(c context.Context, w http.ResponseWriter, r *http.Request) {
-	h.Ctx, h.Res, h.Req = c, w, r
+func (h *Handler) Bind(w http.ResponseWriter, r *http.Request) {
+	h.Res, h.Req = w, r
 }
 
 // Header gets the request header value
@@ -224,7 +227,7 @@ func (h *Handler) SetHeader(name, value string) {
 // error. A detailed error is delivered to the client and logged to provide the
 // details required to identify the issue.
 func (h *Handler) Abort(statusCode int, err error) {
-	c, cancel := context.WithCancel(h.Ctx)
+	c, cancel := context.WithCancel(h.Req.Context())
 	defer cancel()
 
 	// testapp is the name given to all apps when being tested

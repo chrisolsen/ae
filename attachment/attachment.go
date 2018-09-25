@@ -1,12 +1,12 @@
 package attachment
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
 
 	"cloud.google.com/go/storage"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/file"
 )
@@ -30,7 +30,6 @@ func NewWriter(c context.Context, filename, contentType string) (io.WriteCloser,
 	if err != nil {
 		return nil, fmt.Errorf("failed to create client: %v", err)
 	}
-	defer client.Close()
 
 	bucket := client.Bucket(bucketName)
 	wc := bucket.Object(filename).NewWriter(c)

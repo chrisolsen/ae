@@ -3,8 +3,9 @@ package tags
 import (
 	"strings"
 
+	"context"
+
 	"github.com/chrisolsen/ae"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 )
 

@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/chrisolsen/ae"
-	"golang.org/x/net/context"
 )
 
 // Handler handles Google storage image requests
@@ -15,9 +14,10 @@ type Handler struct {
 	ae.Handler
 }
 
-func (h Handler) ServeHTTP(c context.Context, w http.ResponseWriter, r *http.Request) {
-	h.Bind(c, w, r)
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.Bind(w, r)
 	route := ae.NewRoute(r)
+
 	switch {
 	case route.Matches("GET", "/images/:name"):
 		h.fetch(route.Get("name"))
@@ -46,7 +46,7 @@ func (h *Handler) fetch(name string) {
 	if h.Req.TLS == nil {
 		scheme = "http"
 	}
-	sizedURL, err := SizedURL(h.Ctx, scheme, name, width, height)
+	sizedURL, err := SizedURL(h.Ctx(), scheme, name, width, height)
 	if err != nil {
 		h.Abort(http.StatusInternalServerError, fmt.Errorf("failed to get sized image: %v", err))
 		return

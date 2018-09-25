@@ -1,12 +1,12 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
@@ -42,12 +42,12 @@ func AuthCookieName() string {
 }
 
 // AuthenticateCookie authenticates the token with a request cookie
-func (m *Middleware) AuthenticateCookie(c context.Context, w http.ResponseWriter, r *http.Request) context.Context {
+func (m *Middleware) AuthenticateCookie(w http.ResponseWriter, r *http.Request) {
 	var accountKey *datastore.Key
 
-	c, cancel := context.WithCancel(c)
 	returnURL := fmt.Sprintf("%s?returnUrl=%s", m.SignInURL, r.RequestURI)
 
+	c := r.Context()
 	run := func() error {
 		cookie, err := r.Cookie(cookieName)
 		if err != nil {
@@ -82,26 +82,25 @@ func (m *Middleware) AuthenticateCookie(c context.Context, w http.ResponseWriter
 
 		// add accountKey to context
 		c = m.Session.SetAccountKey(c, accountKey)
-
+		*r = *r.WithContext(c)
 		return nil
 	}
 
 	if err := run(); err != nil && !m.ContinueWithBadToken {
+		_, cancel := context.WithCancel(c)
 		http.Redirect(w, r, returnURL, http.StatusTemporaryRedirect)
 		cancel()
 	}
-
-	return c
 }
 
 // AuthenticateToken authenticates the Authorization request header token
-func (m *Middleware) AuthenticateToken(c context.Context, w http.ResponseWriter, r *http.Request) context.Context {
+func (m *Middleware) AuthenticateToken(w http.ResponseWriter, r *http.Request) {
 	// let option requests through
 	if r.Method == http.MethodOptions {
-		return c
+		return
 	}
 
-	c, cancel := context.WithCancel(c)
+	c := r.Context()
 
 	run := func() error {
 		authHeader := r.Header.Get("Authorization")
@@ -146,11 +145,10 @@ func (m *Middleware) AuthenticateToken(c context.Context, w http.ResponseWriter,
 	}
 
 	if err := run(); err != nil && !m.ContinueWithBadToken {
+		_, cancel := context.WithCancel(c)
 		w.WriteHeader(http.StatusUnauthorized)
 		cancel()
 	}
-
-	return c
 }
 
 // Gets the token for the rawToken value

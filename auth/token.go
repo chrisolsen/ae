@@ -1,12 +1,12 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/chrisolsen/ae"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine/datastore"
 	"google.golang.org/appengine/memcache"
 )

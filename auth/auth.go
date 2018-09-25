@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"github.com/chrisolsen/fbgraphapi"
-	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/datastore"
 )
@@ -21,7 +21,7 @@ var (
 )
 
 // GetToken returns the *Token value for the raw token value contained within the auth cookie or auth header
-func GetToken(c context.Context, r *http.Request) (*Token, error) {
+func GetToken(r *http.Request) (*Token, error) {
 	uuid, err := getUUIDFromCookie(r)
 	if err != nil && err != http.ErrNoCookie {
 		return nil, err
@@ -37,13 +37,13 @@ func GetToken(c context.Context, r *http.Request) (*Token, error) {
 	}
 
 	tstore := newTokenStore()
-	return tstore.Get(c, uuid)
+	return tstore.Get(r.Context(), uuid)
 }
 
 // Signup creates a user account and links up the credentials. Based on the request type an auth cookie
 // or header token will be set with an auth token.
-func SignupByForm(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials, keepCookie bool) (*datastore.Key, error) {
-	token, err := signup(c, creds)
+func SignupByForm(w http.ResponseWriter, r *http.Request, creds *Credentials, keepCookie bool) (*datastore.Key, error) {
+	token, err := signup(r.Context(), creds)
 	if err != nil {
 		return nil, err
 	}
@@ -51,8 +51,8 @@ func SignupByForm(c context.Context, w http.ResponseWriter, r *http.Request, cre
 	return token.AccountKey(), nil
 }
 
-func SignupByAPI(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials) (*datastore.Key, error) {
-	token, err := signup(c, creds)
+func SignupByAPI(w http.ResponseWriter, r *http.Request, creds *Credentials) (*datastore.Key, error) {
+	token, err := signup(r.Context(), creds)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func signup(c context.Context, creds *Credentials) (*Token, error) {
 
 // Signout deletes the token in the response to the client as well as deletes the token
 // in the database to ensure it is no longer usable
-func Signout(c context.Context, w http.ResponseWriter, r *http.Request) error {
+func Signout(w http.ResponseWriter, r *http.Request) error {
 	var err error
 	var uuid string
 
@@ -95,19 +95,20 @@ func Signout(c context.Context, w http.ResponseWriter, r *http.Request) error {
 	}
 
 	store := newTokenStore()
-	token, err := store.Get(c, uuid)
+	token, err := store.Get(r.Context(), uuid)
 	if err != nil {
 		return err
 	}
-	err = datastore.Delete(c, token.Key)
+	err = datastore.Delete(r.Context(), token.Key)
 
 	return err
 }
 
 // Authenticate .
-func AuthenticateHeader(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials) (*Token, error) {
+func AuthenticateHeader(w http.ResponseWriter, r *http.Request, creds *Credentials) (*Token, error) {
 	var token *Token
 	var err error
+	c := r.Context()
 	token, err = doExternalAuth(c, creds, appEngineURLGetter{Ctx: c})
 	if err != nil {
 		return nil, err
@@ -116,9 +117,10 @@ func AuthenticateHeader(c context.Context, w http.ResponseWriter, r *http.Reques
 	return token, nil
 }
 
-func AuthenticateForm(c context.Context, w http.ResponseWriter, r *http.Request, creds *Credentials, keepCookie bool) (*Token, error) {
+func AuthenticateForm(w http.ResponseWriter, r *http.Request, creds *Credentials, keepCookie bool) (*Token, error) {
 	var token *Token
 	var err error
+	c := r.Context()
 	token, err = doInternalAuth(c, creds)
 	if err != nil {
 		return nil, err
@@ -223,9 +225,10 @@ func accepts(r *http.Request, t string) bool {
 }
 
 // VerifyReferrer middlware validates the referer header matches the request url's host
-func VerifyReferrer(c context.Context, w http.ResponseWriter, r *http.Request) context.Context {
+func VerifyReferrer(w http.ResponseWriter, r *http.Request) {
+	c := r.Context()
 	if r.Method != http.MethodPost {
-		return c
+		return
 	}
 
 	err := func() error {
@@ -240,9 +243,7 @@ func VerifyReferrer(c context.Context, w http.ResponseWriter, r *http.Request) c
 	}()
 
 	if err != nil {
-		cc, cancel := context.WithCancel(c)
+		_, cancel := context.WithCancel(c)
 		cancel()
-		return cc
 	}
-	return c
 }
